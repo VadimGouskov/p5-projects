@@ -1,4 +1,4 @@
-# a Simple p5 starter project with TypeScript, esLint, Prettier, Hot Reloading and WebPack
+# a Simple p5 starter project with TypeScript, esLint, Prettier, WebPack and Live Reloading 
 
 ## About The Project
 
