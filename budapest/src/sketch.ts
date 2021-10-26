@@ -1,6 +1,7 @@
 import p5 from 'p5';
 import * as p5File from 'p5-file-client';
-import { Grid } from './grid'
+import { Grid } from './grid';
+import { Arc } from './arc';
 
 const s = (p: p5) => {
     const CANVAS_WIDTH = 500;
@@ -12,7 +13,7 @@ const s = (p: p5) => {
 
     const GRID_WIDTH = CANVAS_WIDTH;
     const TOWER_RINGS_AMOUNT = 5; // :warning: Must be uneven number :warning:
-    const TOWER_RADIUS = (GRID_WIDTH / TOWER_RINGS_AMOUNT);
+    const TOWER_RADIUS =  (GRID_WIDTH / TOWER_RINGS_AMOUNT);
     const GRID_ROWS = 5;
     const GRID_COLS = 5;
     const MAX_PATH_LENGTH = GRID_COLS * 2; // TODO better max length
@@ -51,6 +52,8 @@ const s = (p: p5) => {
             .reduce((acc, val) => acc.concat(val), []); // flatten 2d array
 
         buildTowers(towerGenerators);
+
+        // TEST
         
         const image64 = p5File.getCanvasImage(SKETCH_ID);
         fileClient.exportImage64(image64, '.png', 'budapest');
@@ -61,25 +64,14 @@ const s = (p: p5) => {
             let i: number;
             const stepSize = TOWER_RADIUS / 2;
 
-            // base full ring
-            const baseArc = arcGrid[yIndex][xIndex][TOWER_RINGS_AMOUNT-1];
-            if(!!baseArc){
-                p.fill(colorArray[colorArray.length-1]);
-                p.arc(x, y, stepSize * TOWER_RINGS_AMOUNT , stepSize * TOWER_RINGS_AMOUNT, baseArc.offset, baseArc.length);
-            }
-
-            yield;
-
             // rest of the tower
-            for(i = TOWER_RINGS_AMOUNT - 1; i > 0; i--) {
-                const arcOffset = randomInt(0, 4) * p.HALF_PI;
-                const arcLength = randomInt(1, 4) * p.HALF_PI;
-                
+            for(i = TOWER_RINGS_AMOUNT - 1; i >= 0; i--) {
                 const arc = arcGrid[yIndex][xIndex][i];
-                
                 if(!!arc) {
-                    p.fill(colorArray[i-1]);
-                    p.arc(x, y, stepSize * i, stepSize * i, arc.offset, arc.length);
+                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, stepSize / 2 , 10, colorArray[i], '#00f');
+                    innerArc.draw(p);
+                    
+                    p.ellipse(x, y, 5, 5);
                 }
                 yield ;
             }
@@ -110,9 +102,7 @@ const s = (p: p5) => {
         colorPallete.push(...[...halfPallette].reverse());
         console.log(colorPallete);
 
-
         return colorPallete;
-
     }
 
     const randomInt = (min: number, max: number) => {
@@ -121,10 +111,17 @@ const s = (p: p5) => {
 
     const initArcGrid = (): void => {
         arcGrid = create3DArray();
-        
-        for(let i = 0; i < 50; i ++){
+
+        /*
+        for(let i = 0; i < 1; i ++){
             addArcPath();
         }
+        */
+
+       addArcPath();
+       //addArcPath();
+        
+       //addTestPath();
 
     }
 
@@ -148,14 +145,34 @@ const s = (p: p5) => {
             
             if(xIndex < 0 || xIndex >= GRID_COLS || yIndex < 0 || yIndex >= GRID_COLS) break;
 
-            to = direction === 1 ? randomInt(1,3) * p.HALF_PI : end + p.PI;
-            from = direction === 1 ? end + p.PI : randomInt(0,3) * p.HALF_PI;
+            to = direction === 1 ? randomInt(1,3) * p.HALF_PI : (end + p.PI) % p.TWO_PI;
+            from = direction === 1 ? (end + p.PI) % p.TWO_PI : randomInt(1,3) * p.HALF_PI;
             end = direction === 1 ? to : from;
+
+            console.log(`[${yIndex},${xIndex}] to:${to}, from:${from}`);
 
             arcGrid[yIndex][xIndex][tower] = new ArcElement(from, to );
 
         }
     }
+
+    const addTestPath = () => {
+        const startTower = 1;
+        let tower: number;
+        arcGrid[0][1][0] = new ArcElement(0, p.HALF_PI);
+        arcGrid[0][1][1] = new ArcElement(0, p.HALF_PI);
+        arcGrid[0][1][2] = new ArcElement(0 , p.HALF_PI );
+        //arcGrid[0][1][3] = new ArcElement(0 , p.HALF_PI );
+        arcGrid[0][1][4] = new ArcElement(0 , p.HALF_PI );
+
+        arcGrid[1][1][0] = new ArcElement(p.PI, p.HALF_PI + p.PI);
+        //arcGrid[1][1][1] = new ArcElement(p.PI, p.HALF_PI + p.PI);
+        arcGrid[1][1][2] = new ArcElement(p.PI, p.HALF_PI + p.PI );
+        arcGrid[1][1][3] = new ArcElement(p.PI, p.HALF_PI + p.PI );
+        arcGrid[1][1][4] = new ArcElement(p.PI, p.HALF_PI + p.PI);
+
+
+    } 
 
     const nextYIndex = (prevYIndex: number, arcEnd: number, direction: number): number => {
         return Math.round(prevYIndex + Math.sin(arcEnd));
@@ -167,7 +184,7 @@ const s = (p: p5) => {
 
     const nextTower = (prevTower: number, towerAmount: number): number => {
         // 2 * middleTowerIndex - prevTowerIndex;
-        return (towerAmount + 1) - prevTower;
+        return (towerAmount - 1) - prevTower;
     }
 
 
