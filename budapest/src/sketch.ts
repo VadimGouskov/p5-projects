@@ -68,7 +68,7 @@ const s = (p: p5) => {
             for(i = TOWER_RINGS_AMOUNT - 1; i >= 0; i--) {
                 const arc = arcGrid[yIndex][xIndex][i];
                 if(!!arc) {
-                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, stepSize / 2 , 10, colorArray[i], '#00f');
+                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, stepSize / 2 , 5, colorArray[i], '#fff');
                     innerArc.draw(p);
                     
                     p.ellipse(x, y, 5, 5);
@@ -112,15 +112,12 @@ const s = (p: p5) => {
     const initArcGrid = (): void => {
         arcGrid = create3DArray();
 
-        /*
-        for(let i = 0; i < 1; i ++){
+        
+        for(let i = 0; i < 100; i ++){
             addArcPath();
         }
-        */
 
-       addArcPath();
-       //addArcPath();
-        
+       // addArcPath();
        //addTestPath();
 
     }
@@ -145,8 +142,8 @@ const s = (p: p5) => {
             
             if(xIndex < 0 || xIndex >= GRID_COLS || yIndex < 0 || yIndex >= GRID_COLS) break;
 
-            to = direction === 1 ? randomInt(1,3) * p.HALF_PI : (end + p.PI) % p.TWO_PI;
-            from = direction === 1 ? (end + p.PI) % p.TWO_PI : randomInt(1,3) * p.HALF_PI;
+            to = direction === 1 ? randomInt(1, 3) * p.HALF_PI : (end + p.PI) % p.TWO_PI;
+            from = direction === 1 ? (end + p.PI) % p.TWO_PI : randomInt(1, 3) * p.HALF_PI;
             end = direction === 1 ? to : from;
 
             console.log(`[${yIndex},${xIndex}] to:${to}, from:${from}`);
@@ -188,8 +185,8 @@ const s = (p: p5) => {
     }
 
 
-    const create3DArray = (): any[][][] => {
-        const base: any[][][] = [[[]]];
+    const create3DArray = (): undefined[][][] => {
+        const base: undefined[][][] = [[[]]];
         for(let y = 0; y < GRID_ROWS ; y++) {
             base[y] = [];
             for(let x = 0; x < GRID_COLS ; x++) {
