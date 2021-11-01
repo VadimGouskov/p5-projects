@@ -3,14 +3,27 @@ import * as p5File from 'p5-file-client';
 import { Grid } from './grid';
 import { Arc } from './arc';
 
+type ArcGrid = (ArcElement|undefined)[][][];
+
 const s = (p: p5) => {
     const CANVAS_WIDTH = 500;
     const CANVAS_HEIGHT = 500;
     const SKETCH_ID = 'sketch';
     let fileClient : p5File.FileClient; 
+    
+    // FOREGROUND
     let towerGrid: Grid;
-    let arcGrid: (ArcElement|undefined)[][][];
+    let arcGrid: ArcGrid;
 
+    // FILL
+    let fillGrid: Grid;
+    let fillArcGrid: ArcGrid;
+    
+    // BACKGROUND
+    let secondaryGrid: Grid;
+    let secondaryArcGrid: ArcGrid;
+
+    // SETTINGS
     const GRID_WIDTH = CANVAS_WIDTH;
     const TOWER_RINGS_AMOUNT = 5; // :warning: Must be uneven number :warning:
     const TOWER_RADIUS =  (GRID_WIDTH / TOWER_RINGS_AMOUNT);
@@ -30,11 +43,23 @@ const s = (p: p5) => {
         canvas.parent(SKETCH_ID);
         p.noLoop();
         p.colorMode(p.HSB, 1);
-
         fileClient = new p5File.FileClient(undefined, undefined, '/home/vadim/Projects/creative-coding/p5-projects/budapest/progress');
+        
+        // FOREGROUND
         towerGrid = new Grid(GRID_COLS, GRID_ROWS, GRID_WIDTH, GRID_WIDTH);
-        initArcGrid();
-        console.log(arcGrid);
+        arcGrid = create3DArray();
+        initArcGrid(arcGrid);
+
+        // FILLGRID
+        fillGrid = new Grid(GRID_COLS, GRID_ROWS, GRID_WIDTH, GRID_WIDTH);
+        fillArcGrid = create3DArray();
+        initArcGrid(arcGrid);
+
+        // SECONDARY
+        secondaryGrid = new Grid(3, 3, GRID_WIDTH, GRID_WIDTH);
+        secondaryArcGrid = create3DArray();
+        initArcGrid(secondaryArcGrid);
+        
         colorArray = createColorPallete();
     };
 
@@ -47,19 +72,31 @@ const s = (p: p5) => {
         p.fill(0);
         p.stroke(255)
 
-        const towerGenerators = towerGrid.get()
-            .map((xPoints, yIndex) => xPoints.map((point, xIndex) => createTowerGenerator(point.x, point.y, xIndex, yIndex)()))
-            .reduce((acc, val) => acc.concat(val), []); // flatten 2d array
-
+        // FOREGROUND
+        const towerGenerators = mapTowerGenerators(towerGrid, arcGrid);
         buildTowers(towerGenerators);
 
-        // TEST
+        // FILL
+        const fillTowerGenerators = mapTowerGenerators(fillGrid, fillArcGrid);
+        buildTowers(fillTowerGenerators);
         
+        // SECONDARY
+        const secondaryTowerGenerators = mapTowerGenerators(secondaryGrid, secondaryArcGrid);
+        buildTowers(secondaryTowerGenerators);
+        
+
+        // EXPORT        
         const image64 = p5File.getCanvasImage(SKETCH_ID);
         fileClient.exportImage64(image64, '.png', 'budapest');
     };
 
-    const createTowerGenerator = (x: number, y: number, xIndex: number, yIndex: number) => {
+    const mapTowerGenerators = (grid: Grid, arcGrid: ArcGrid) : Generator<undefined, void, unknown>[] => {
+        return grid.get()
+            .map((xPoints, yIndex) => xPoints.map((point, xIndex) => createTowerGenerator(arcGrid, point.x, point.y, xIndex, yIndex)()))
+            .reduce((acc, val) => acc.concat(val), []); // flatten 2d array
+    }
+
+    const createTowerGenerator = (arcGrid: ArcGrid, x: number, y: number, xIndex: number, yIndex: number) => {
         return function* () {
             let i: number;
             const stepSize = TOWER_RADIUS / 2;
@@ -70,8 +107,6 @@ const s = (p: p5) => {
                 if(!!arc) {
                     const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, stepSize / 2 , 5, colorArray[i], '#fff');
                     innerArc.draw(p);
-                    
-                    p.ellipse(x, y, 5, 5);
                 }
                 yield ;
             }
@@ -109,20 +144,13 @@ const s = (p: p5) => {
         return min + Math.floor(Math.random() * max);
     }
 
-    const initArcGrid = (): void => {
-        arcGrid = create3DArray();
-
-        
+    const initArcGrid = (grid: ArcGrid): void => {
         for(let i = 0; i < 100; i ++){
-            addArcPath();
+            addArcPath(grid);
         }
-
-       // addArcPath();
-       //addTestPath();
-
     }
 
-    const addArcPath = (): void => {
+    const addArcPath = (grid: ArcGrid): void => {
         let startLength = randomInt(1,3) * p.HALF_PI;
         const startOffset = randomInt(1,3) * p.HALF_PI;
         let end = startOffset + startLength;
@@ -130,7 +158,7 @@ const s = (p: p5) => {
         let xIndex = randomInt(0, GRID_ROWS);
         let tower = randomInt(0, TOWER_RINGS_AMOUNT);
         let direction = 1;
-        arcGrid[yIndex][xIndex][tower] = new ArcElement(startOffset, startLength);
+        grid[yIndex][xIndex][tower] = new ArcElement(startOffset, startLength);
 
         let to = 0, from = 0;
         for (let i = 0; i < MAX_PATH_LENGTH; i++) {
@@ -148,7 +176,7 @@ const s = (p: p5) => {
 
             console.log(`[${yIndex},${xIndex}] to:${to}, from:${from}`);
 
-            arcGrid[yIndex][xIndex][tower] = new ArcElement(from, to );
+            grid[yIndex][xIndex][tower] = new ArcElement(from, to );
 
         }
     }
@@ -167,7 +195,6 @@ const s = (p: p5) => {
         arcGrid[1][1][2] = new ArcElement(p.PI, p.HALF_PI + p.PI );
         arcGrid[1][1][3] = new ArcElement(p.PI, p.HALF_PI + p.PI );
         arcGrid[1][1][4] = new ArcElement(p.PI, p.HALF_PI + p.PI);
-
 
     } 
 
