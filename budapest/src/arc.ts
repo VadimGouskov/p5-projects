@@ -25,8 +25,6 @@ export class Arc {
 
         p.noFill();
         p.strokeCap(p.SQUARE);
-        
-
 
         // CENTER
         p.stroke(this.color);

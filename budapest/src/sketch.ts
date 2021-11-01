@@ -36,6 +36,8 @@ const s = (p: p5) => {
     const MIN_SATURATION = 0.1;
     const MAX_SATURATION = 0.9;
 
+    const SHAPE_SIZE = TOWER_RADIUS / 12;
+
     let colorArray: Array<string> = new Array()
 
     p.setup = () => {
@@ -43,6 +45,7 @@ const s = (p: p5) => {
         canvas.parent(SKETCH_ID);
         p.noLoop();
         p.colorMode(p.HSB, 1);
+        p.rectMode(p.CENTER);
         fileClient = new p5File.FileClient(undefined, undefined, '/home/vadim/Projects/creative-coding/p5-projects/budapest/progress');
         
         // FOREGROUND
@@ -83,12 +86,22 @@ const s = (p: p5) => {
         // SECONDARY
         const secondaryTowerGenerators = mapTowerGenerators(secondaryGrid, secondaryArcGrid);
         buildTowers(secondaryTowerGenerators);
-        
+
+        // SHAPES
+        drawShapeGrid(secondaryGrid);
 
         // EXPORT        
         const image64 = p5File.getCanvasImage(SKETCH_ID);
         fileClient.exportImage64(image64, '.png', 'budapest');
     };
+
+    const drawShapeGrid = (grid: Grid) => {
+        p.push();
+        p.fill('#fff');
+        p.strokeWeight(0);
+        grid.flat.forEach(point => p.ellipse(point.x, point.y, SHAPE_SIZE, SHAPE_SIZE));
+        p.pop();
+    }
 
     const mapTowerGenerators = (grid: Grid, arcGrid: ArcGrid) : Generator<undefined, void, unknown>[] => {
         return grid.get()
