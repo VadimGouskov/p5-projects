@@ -81,16 +81,17 @@ const s = (p: p5) => {
         buildTowers(towerGenerators);
 
         /*
-        // FILL
+        // FILL: An extra layer 
         const fillTowerGenerators = mapTowerGenerators(fillGrid, fillArcGrid);
         buildTowers(fillTowerGenerators);
+        */
 
         // SECONDARY
         const secondaryTowerGenerators = mapTowerGenerators(secondaryGrid, secondaryArcGrid);
         buildTowers(secondaryTowerGenerators);
-*/
+        
         // SHAPES
-        drawShapeGrid(secondaryGrid);
+        drawShapeGrid(towerGrid);
 
         // EXPORT        
         const image64 = p5File.getCanvasImage(SKETCH_ID);
@@ -120,9 +121,8 @@ const s = (p: p5) => {
             for(i = TOWER_RINGS_AMOUNT - 1; i >= 0; i--) {
                 const arc = arcGrid[yIndex][xIndex][i];
                 if(!!arc) {
-                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , STROKE_WIDTH, colorArray[i], '#0ff');
+                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , STROKE_WIDTH, colorArray[i], '#fff');
                     innerArc.draw(p);
-                    console.log(arc.offset, arc.length);
                 }
                 yield ;
             }
@@ -160,41 +160,47 @@ const s = (p: p5) => {
     }
 
     const initArcGrid = (grid: ArcGrid): void => {
-        addTestPath();
-        //addArcPath(grid);
-        return;
-        
         for(let i = 0; i < 100; i ++){
             addArcPath(grid);
         }
     }
 
     const addArcPath = (grid: ArcGrid): void => {
-        let startLength = randomInt(1,3) * p.HALF_PI;
-        const startOffset = randomInt(1,3) * p.HALF_PI;
-        let end = startOffset + startLength;
-        let yIndex = randomInt(0, GRID_COLS);
-        let xIndex = randomInt(0, GRID_ROWS);
+        let end = randomInt(1,3) * p.HALF_PI;
+        let yIndex = randomInt(0, GRID_COLS - 1);
+        let xIndex = randomInt(0, GRID_ROWS - 1);
         let tower = randomInt(0, TOWER_RINGS_AMOUNT);
         let direction = 1;
-        grid[yIndex][xIndex][tower] = new ArcElement(startOffset, startLength);
-
         let to = 0, from = 0;
+
         for (let i = 0; i < MAX_PATH_LENGTH; i++) {
-            direction = -direction;
+            
 
             tower = nextTower(tower, TOWER_RINGS_AMOUNT);
             yIndex = nextYIndex(yIndex, end, 1);
             xIndex = nextXIndex(xIndex, end, 1);
             
+            // Keep the path inside the grid
             if(xIndex < 0 || xIndex >= GRID_COLS || yIndex < 0 || yIndex >= GRID_COLS) break;
 
-            to = direction === 1 ? randomInt(1, 3) * p.HALF_PI : (end + p.PI) % p.TWO_PI;
-            from = direction === 1 ? (end + p.PI) % p.TWO_PI : randomInt(1, 3) * p.HALF_PI;
-            end = direction === 1 ? to : from;
+            // calculate the arc
+            const target = (end + p.PI) % p.TWO_PI;
+            const length = randomInt(1, 2) * p.HALF_PI;
 
+            if (direction === 1) {
+                from = target;
+                to = (target + length) % p.TWO_PI ;
+                end = to;
+            } else {
+                from = (target - length) % p.TWO_PI;
+                to = target;
+                end = from;
+            }
+
+            // switch deirection
+            direction = -direction;
+            // save arc in path
             grid[yIndex][xIndex][tower] = new ArcElement(from, to );
-
         }
     }
 
@@ -202,7 +208,7 @@ const s = (p: p5) => {
         const startTower = 1;
         let tower: number;
         
-        arcGrid[0][1][0] = new ArcElement( p.HALF_PI, 0);
+        arcGrid[0][1][0] = new ArcElement( p.PI, p.HALF_PI + p.TWO_PI);
         
         /*
         arcGrid[0][1][1] = new ArcElement(0, p.HALF_PI);
