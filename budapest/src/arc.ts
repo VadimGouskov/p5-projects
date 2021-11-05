@@ -3,6 +3,7 @@ import p5 from 'p5';
 export class Arc {
     private w: number;
     private h: number;
+    private CORRECTION: number = Math.PI / 720;
     constructor(
         private x: number,
         private y: number,
@@ -16,8 +17,7 @@ export class Arc {
         private strokeColor: string, 
         ){ 
             this.w = w - arcWidth ;
-            this.h = h - arcWidth;
-
+            this.h = h - arcWidth ;
         }
 
     draw(p: p5) {
@@ -26,11 +26,18 @@ export class Arc {
         p.noFill();
         p.strokeCap(p.SQUARE);
 
+        // don't add a correction to an empty arc
+        if((this.stop - this.start) !== 0) {
+            this.start = this.start - this.CORRECTION;
+            this.stop = this.stop + this.CORRECTION;
+        }
+
         // CENTER
         p.stroke(this.color);
         p.strokeWeight(this.arcWidth);
         p.arc(this.x, this.y, this.w, this.h, this.start, this.stop, p.OPEN);
 
+        
         // OUTER STROKE
         p.stroke(this.strokeColor);
         p.strokeWeight(this.strokeWidth);

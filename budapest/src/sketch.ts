@@ -30,13 +30,14 @@ const s = (p: p5) => {
     const GRID_ROWS = 5;
     const GRID_COLS = 5;
     const MAX_PATH_LENGTH = GRID_COLS * 2; // TODO better max length
+    const STROKE_WIDTH = 5;
 
     const BASE_COLOR = 0;
     const BASE_BRIGHTNESS = 0.5;
     const MIN_SATURATION = 0.1;
     const MAX_SATURATION = 0.9;
 
-    const SHAPE_SIZE = TOWER_RADIUS / 12;
+    const SHAPE_SIZE = STROKE_WIDTH;
 
     let colorArray: Array<string> = new Array()
 
@@ -56,7 +57,7 @@ const s = (p: p5) => {
         // FILLGRID
         fillGrid = new Grid(GRID_COLS, GRID_ROWS, GRID_WIDTH, GRID_WIDTH);
         fillArcGrid = create3DArray();
-        initArcGrid(arcGrid);
+        initArcGrid(fillArcGrid);
 
         // SECONDARY
         secondaryGrid = new Grid(3, 3, GRID_WIDTH, GRID_WIDTH);
@@ -74,19 +75,20 @@ const s = (p: p5) => {
 
         p.fill(0);
         p.stroke(255)
-
+        
         // FOREGROUND
         const towerGenerators = mapTowerGenerators(towerGrid, arcGrid);
         buildTowers(towerGenerators);
 
+        /*
         // FILL
         const fillTowerGenerators = mapTowerGenerators(fillGrid, fillArcGrid);
         buildTowers(fillTowerGenerators);
-        
+
         // SECONDARY
         const secondaryTowerGenerators = mapTowerGenerators(secondaryGrid, secondaryArcGrid);
         buildTowers(secondaryTowerGenerators);
-
+*/
         // SHAPES
         drawShapeGrid(secondaryGrid);
 
@@ -112,14 +114,15 @@ const s = (p: p5) => {
     const createTowerGenerator = (arcGrid: ArcGrid, x: number, y: number, xIndex: number, yIndex: number) => {
         return function* () {
             let i: number;
-            const stepSize = TOWER_RADIUS / 2;
+            const stepSize = TOWER_RADIUS / 2 ;
 
             // rest of the tower
             for(i = TOWER_RINGS_AMOUNT - 1; i >= 0; i--) {
                 const arc = arcGrid[yIndex][xIndex][i];
                 if(!!arc) {
-                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, stepSize / 2 , 5, colorArray[i], '#fff');
+                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , STROKE_WIDTH, colorArray[i], '#0ff');
                     innerArc.draw(p);
+                    console.log(arc.offset, arc.length);
                 }
                 yield ;
             }
@@ -148,7 +151,6 @@ const s = (p: p5) => {
         const halfPallette = [...colorPallete];
         halfPallette.pop();
         colorPallete.push(...[...halfPallette].reverse());
-        console.log(colorPallete);
 
         return colorPallete;
     }
@@ -158,6 +160,10 @@ const s = (p: p5) => {
     }
 
     const initArcGrid = (grid: ArcGrid): void => {
+        addTestPath();
+        //addArcPath(grid);
+        return;
+        
         for(let i = 0; i < 100; i ++){
             addArcPath(grid);
         }
@@ -187,8 +193,6 @@ const s = (p: p5) => {
             from = direction === 1 ? (end + p.PI) % p.TWO_PI : randomInt(1, 3) * p.HALF_PI;
             end = direction === 1 ? to : from;
 
-            console.log(`[${yIndex},${xIndex}] to:${to}, from:${from}`);
-
             grid[yIndex][xIndex][tower] = new ArcElement(from, to );
 
         }
@@ -197,7 +201,10 @@ const s = (p: p5) => {
     const addTestPath = () => {
         const startTower = 1;
         let tower: number;
-        arcGrid[0][1][0] = new ArcElement(0, p.HALF_PI);
+        
+        arcGrid[0][1][0] = new ArcElement( p.HALF_PI, 0);
+        
+        /*
         arcGrid[0][1][1] = new ArcElement(0, p.HALF_PI);
         arcGrid[0][1][2] = new ArcElement(0 , p.HALF_PI );
         //arcGrid[0][1][3] = new ArcElement(0 , p.HALF_PI );
@@ -208,7 +215,7 @@ const s = (p: p5) => {
         arcGrid[1][1][2] = new ArcElement(p.PI, p.HALF_PI + p.PI );
         arcGrid[1][1][3] = new ArcElement(p.PI, p.HALF_PI + p.PI );
         arcGrid[1][1][4] = new ArcElement(p.PI, p.HALF_PI + p.PI);
-
+        */
     } 
 
     const nextYIndex = (prevYIndex: number, arcEnd: number, direction: number): number => {
