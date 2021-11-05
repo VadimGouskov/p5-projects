@@ -10,6 +10,7 @@ export class TowerGrid {
     arcGrid!: ArcGrid;
     towerGenerators!: Generator[];
     colorArray: string[] = [];
+    strokeColor: string = "#fff";
 
     MAX_PATH_LENGTH = 10; // TODO better max length
     STROKE_WIDTH = 5;
@@ -40,12 +41,21 @@ export class TowerGrid {
     }
 
     setColorPalette = (palette: string[]): void => {
+
+        if(palette.length < Math.ceil(this.towerRingsAmount / 2)) throw new Error(`Palette contains too little colors, minumum amount is ${this.towerRingsAmount / 2}`);
+
+        this.colorArray = [];
+
         const halfPallette = [...palette];
         // push the first half
         this.colorArray.push(...halfPallette);
         // mirror the pallete and push the second
         halfPallette.pop();
         this.colorArray.push(...[...halfPallette].reverse());
+    }
+
+    setStrokeColor = (color: string): void => {
+        this.strokeColor = color;
     }
 
     private mapTowerGenerators = (grid: Grid, arcGrid: ArcGrid) : Generator<undefined, void, unknown>[] => {
@@ -65,7 +75,7 @@ export class TowerGrid {
             for(i = self.towerRingsAmount - 1; i >= 0; i--) {
                 const arc = arcGrid[yIndex][xIndex][i];
                 if(!!arc) {
-                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , self.STROKE_WIDTH, self.colorArray[i], '#fff');
+                    const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , self.STROKE_WIDTH, self.colorArray[i], self.strokeColor);
                     innerArc.draw(self.p);
                 }
                 yield ;

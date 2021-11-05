@@ -15,12 +15,13 @@ const s = (p: p5) => {
     // SETTINGS
     const GRID_WIDTH = CANVAS_WIDTH;
     const TOWER_RINGS_AMOUNT = 5; // :warning: Must be uneven number :warning:
-    const TOWER_RADIUS =  (GRID_WIDTH / TOWER_RINGS_AMOUNT);
     const GRID_ROWS = 5;
     const GRID_COLS = 5;
-    const MAX_PATH_LENGTH = GRID_COLS * 2; // TODO better max length
     const STROKE_WIDTH = 5;
 
+    // Pallette https://coolors.co/003049-d62828-f77f00-fcbf49-eae2b7
+    const PALETTE = ["#d62828", "#f77f00", "#fcbf49"];
+    const BG_COLOR = "#003049";
     const SHAPE_SIZE = STROKE_WIDTH;
 
     let primaryGrid: TowerGrid;
@@ -37,20 +38,22 @@ const s = (p: p5) => {
         primaryGrid = new TowerGrid(p, GRID_ROWS, GRID_ROWS, GRID_WIDTH, TOWER_RINGS_AMOUNT);
         secondaryGrid = new TowerGrid(p, 3, 3, GRID_WIDTH, TOWER_RINGS_AMOUNT);
         
+        primaryGrid.setColorPalette(PALETTE);
+        secondaryGrid.setColorPalette(PALETTE);
+
+        primaryGrid.setStrokeColor(BG_COLOR);
+        secondaryGrid.setStrokeColor(BG_COLOR);
     };
 
     p.draw = () => {
-        p.background(100);
+        p.background(BG_COLOR);
         p.translate(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        p.scale(0.666);
+        p.scale(0.6);
         p.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
-
-        p.fill(0);
-        p.stroke(255)
         
+        //secondaryGrid.show();
         primaryGrid.show();
-        secondaryGrid.show();
- 
+
         // SHAPES
         drawShapeGrid(new Grid(GRID_ROWS, GRID_COLS, GRID_WIDTH, GRID_WIDTH));
         
@@ -61,7 +64,7 @@ const s = (p: p5) => {
 
     const drawShapeGrid = (grid: Grid) => {
         p.push();
-        p.fill('#fff');
+        p.fill(BG_COLOR);
         p.strokeWeight(0);
         grid.flat.forEach(point => p.ellipse(point.x, point.y, SHAPE_SIZE, SHAPE_SIZE));
         p.pop();
