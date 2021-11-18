@@ -51,7 +51,7 @@ const s = (p: p5) => {
         p.scale(0.6);
         p.translate(-CANVAS_WIDTH / 2, -CANVAS_HEIGHT / 2);
         
-        //secondaryGrid.show();
+        secondaryGrid.show();
         primaryGrid.show();
 
         // SHAPES

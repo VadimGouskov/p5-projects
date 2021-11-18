@@ -20,6 +20,10 @@ export class Arc {
             this.h = h - arcWidth ;
         }
 
+    setCorrection(amount: number): void {
+        this.CORRECTION = amount;
+    }
+
     draw(p: p5) {
         p.push(); 
 

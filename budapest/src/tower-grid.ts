@@ -13,7 +13,7 @@ export class TowerGrid {
     strokeColor: string = "#fff";
 
     MAX_PATH_LENGTH = 10; // TODO better max length
-    STROKE_WIDTH = 5;
+    STROKE_WIDTH = 3;
 
     constructor(private p: p5,
                 private rows: number, 
@@ -76,6 +76,11 @@ export class TowerGrid {
                 const arc = arcGrid[yIndex][xIndex][i];
                 if(!!arc) {
                     const innerArc = new Arc(x, y, stepSize * (i + 1), stepSize * (i + 1), arc.offset, arc.length, (stepSize / 2) , self.STROKE_WIDTH, self.colorArray[i], self.strokeColor);
+                    
+                    // HACK: partially prevent slicing on inner towers caused by adjacent strokes with higher z-axis
+                    if(i === 0) {
+                        innerArc.setCorrection(self.p.PI / 30);
+                    }
                     innerArc.draw(self.p);
                 }
                 yield ;
