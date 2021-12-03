@@ -1,10 +1,7 @@
 import p5 from 'p5';
 import * as p5File from 'p5-file-client';
 import { Grid } from './grid';
-import { Arc } from './arc';
 import { TowerGrid } from './tower-grid';
-
-type ArcGrid = (ArcElement|undefined)[][][];
 
 const s = (p: p5) => {
     const CANVAS_WIDTH = 500;
