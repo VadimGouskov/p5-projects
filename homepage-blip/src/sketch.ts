@@ -34,15 +34,23 @@ const s = (p: p5) => {
         p.fill("#f77f00");
 
         p.background(127);
+
         
+        const WAVE_OFFSET_X = p.mouseX;
+        const WAVE_OFFSET_Y = p.mouseY;
+
+        p.translate(WAVE_OFFSET_X, WAVE_OFFSET_Y)
+
         grid.flat.forEach(point => {
-            const AMPLITUDE = 20;
+            const AMPLITUDE = 15;
             const FREQUENCY = 0.02;
             const OFFSET = p.PI;
 
-            const pointVector = p.createVector(point.x, point.y);
+            const pointVector = p.createVector(point.x -WAVE_OFFSET_X, point.y -WAVE_OFFSET_Y);
             const movedVector = pointVector.copy();
+
             movedVector.setMag(pointVector.mag() + AMPLITUDE * Math.sin(t + pointVector.mag() * FREQUENCY + OFFSET));
+            
             p.ellipse(movedVector.x, movedVector.y, POINT_SIZE, POINT_SIZE);
         })
 
