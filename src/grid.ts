@@ -46,17 +46,13 @@ export class Grid {
     }
 
     getRandomPoint(): GridPoint {
-        try {
-            const xIndex = Math.floor(Math.random() * (this.amountX - 1));
-            const yIndex = Math.floor(Math.random() * (this.amountY - 1));
-            return this.grid[yIndex][xIndex];
-        } catch (err) {
-            debugger;
-            return new GridPoint(0, 0);
-        }
+        const xIndex = Math.floor(Math.random() * (this.amountX - 1));
+        const yIndex = Math.floor(Math.random() * (this.amountY - 1));
+
+        return this.grid[yIndex][xIndex];
     }
 
-    slice(startXIndex: number, stopXIndex: number, startYIndex: number, stopYIndex: number): GridPoint[][] {
+    slice(startYIndex: number, stopYIndex: number, startXIndex: number, stopXIndex: number): GridPoint[][] {
         return this.grid.slice(startYIndex, stopYIndex + 1).map((i) => i.slice(startXIndex, stopXIndex + 1));
     }
 

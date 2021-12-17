@@ -6,11 +6,17 @@ const s = (p: p5) => {
     const CANVAS_WIDTH = 500;
     const CANVAS_HEIGHT = 500;
 
-    const MAIN_GRID_DENSITY = 41;
-    const SHAPES_AMOUNT = 40;
+    const SHAPE_GRID_DENSITY = 20;
+    const DOT_GRID_DENSITY = 40;
+    const SHAPE_GRID_AMOUNT = 3;
+    const DOT_GRID_AMOUNT = 2;
+
+    // Should be minum 2 because the grid gets divided in quadrants for drawing the shape
+    const MINIMUM_SLICE_WIDTH = 4;
 
     let fileClient: FileClient;
-    let mainGrid: Grid;
+    let shapeGrid: Grid;
+    let dotGrid: Grid;
 
     p.setup = () => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -25,7 +31,8 @@ const s = (p: p5) => {
             '/home/vadim/Projects/creative-coding/p5-projects/open-grid/progress',
         );
 
-        mainGrid = new Grid(MAIN_GRID_DENSITY, MAIN_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
+        shapeGrid = new Grid(SHAPE_GRID_DENSITY, SHAPE_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
+        dotGrid = new Grid(DOT_GRID_DENSITY, DOT_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
     };
 
     p.draw = () => {
@@ -35,24 +42,28 @@ const s = (p: p5) => {
         p.push();
         p.fill('#ff0000');
         p.noStroke();
-        mainGrid.draw((x: number, y: number) => p.ellipse(x, y, 1, 1));
+        // shapeGrid.draw((x: number, y: number) => p.ellipse(x, y, 1, 1));
         p.pop();
 
         p.fill('#0000ff');
         p.noStroke();
 
-        Array(SHAPES_AMOUNT)
+        // GRIDS
+        Array(DOT_GRID_AMOUNT)
+            .fill(0)
+            .forEach(() => {
+                const slicedGrid = randomGridSlice(dotGrid);
+
+                p.fill(0, 0, 0);
+                slicedGrid.draw((x: number, y: number) => p.ellipse(x, y, 3, 3));
+            });
+        // SHAPES
+        Array(SHAPE_GRID_AMOUNT)
             .fill(0)
             .forEach(() => {
                 p.fill(randomInt(0, 361), 100, 100);
-                const indexYStart = randomInt(0, mainGrid.amountY - 4 - 1);
-                const indexYEnd = randomInt(indexYStart + 1, mainGrid.amountY - 1);
-                const indexXStart = randomInt(0, mainGrid.amountX - 4 - 1);
-                const indexXEnd = randomInt(indexXStart + 1, mainGrid.amountX - 1);
-                debugger;
-                const slice = mainGrid.slice(indexYStart, indexYEnd, indexXStart, indexXEnd);
-                const slicedGrid = new Grid(slice.length, slice[0].length, 0, 0);
-                slicedGrid.set(slice);
+                p.noStroke();
+                const slicedGrid = randomGridSlice(shapeGrid);
 
                 drawRandomShape(slicedGrid);
             });
@@ -101,10 +112,24 @@ const s = (p: p5) => {
         stopXIndex: number,
     ): GridPoint => {
         const slice = grid.slice(startYIndex, stopYIndex, startXIndex, stopXIndex);
-        const slicedGrid = new Grid(slice.length, slice[0].length, 0, 0);
+        const slicedGrid = new Grid(slice[0].length, slice.length, 0, 0);
         slicedGrid.set(slice);
         const randomPoint = slicedGrid.getRandomPoint();
         return randomPoint;
+    };
+
+    const randomGridSlice = (grid: Grid): Grid => {
+        // Get a portion a the grid to construct the shape
+        // TODO better adjustable max width
+        const indexYStart = randomInt(1, grid.amountY - 2 * MINIMUM_SLICE_WIDTH - 1);
+        const indexYEnd = randomInt(indexYStart + MINIMUM_SLICE_WIDTH, grid.amountY - 1);
+        const indexXStart = randomInt(1, grid.amountX - 2 * MINIMUM_SLICE_WIDTH - 1);
+        const indexXEnd = randomInt(indexXStart + MINIMUM_SLICE_WIDTH, grid.amountX - 1);
+
+        const slice = grid.slice(indexYStart, indexYEnd, indexXStart, indexXEnd);
+        const slicedGrid = new Grid(slice[0].length, slice.length, 0, 0);
+        slicedGrid.set(slice);
+        return slicedGrid;
     };
 
     const randomInt = (min: number, max: number): number => {
