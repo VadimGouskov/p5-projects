@@ -42,19 +42,26 @@ const s = (p: p5) => {
 
         // DOTS
         iterator(DOT_GRID_AMOUNT, () => {
-            const slicedGrid = randomGridSlice(dotGrid, { minWidth: 4, maxWidth: 8, minHeight: 8, maxHeight: 10 });
+            const slicedGrid = randomGridSlice(dotGrid, { minWidth: 4, maxWidth: 8, minHeight: 20, maxHeight: 36 });
             p.fill(0, 0, 0);
             slicedGrid.draw((x: number, y: number) => p.ellipse(x, y, 3, 3));
         });
 
         // SHAPES
-        iterator(SHAPE_GRID_AMOUNT, () => {
-            const slicedGrid = randomGridSlice(shapeGrid, { minWidth: 4, maxWidth: 8, minHeight: 8, maxHeight: 8 });
+        for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
+            const mainShape = i === 1;
+            const slicedGrid = randomGridSlice(shapeGrid, {
+                minWidth: mainShape ? 8 : 4,
+                maxWidth: mainShape ? 16 : 8,
+                minHeight: mainShape ? 16 : 4,
+                maxHeight: mainShape ? 20 : 8,
+            });
 
             // Draw the bg
             let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
             bgGraphics.colorMode(bgGraphics.HSB, 360, 100, 100);
-            if (chance(0.3)) {
+            if (mainShape) {
+                //bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
                 bgGraphics = drawLineBG(bgGraphics);
             } else {
                 bgGraphics.background(randomInt(0, 361), 75, 100);
@@ -74,7 +81,7 @@ const s = (p: p5) => {
             bgImage.mask(maskGraphics.get());
             //Draw the masked image
             p.image(bgImage, 0, 0);
-        });
+        }
 
         // EXPORT
         const image64 = getCanvasImage('sketch');
