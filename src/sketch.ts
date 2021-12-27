@@ -17,6 +17,12 @@ const s = (p: p5) => {
     let shapeGrid: Grid;
     let dotGrid: Grid;
 
+    let bgImage: p5.Image;
+
+    p.preload = () => {
+        bgImage = p.loadImage('https://th.bing.com/th/id/OIP.VQxPnhHMf7PVUFtVCSEXuwHaEo?pid=ImgDet&rs=1');
+    };
+
     p.setup = () => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
         canvas.parent('sketch');
@@ -61,8 +67,8 @@ const s = (p: p5) => {
             let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
             bgGraphics.colorMode(bgGraphics.HSB, 360, 100, 100);
             if (mainShape) {
-                //bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
-                bgGraphics = drawLineBG(bgGraphics);
+                bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
+                //bgGraphics = drawLineBG(bgGraphics);
             } else {
                 bgGraphics.background(randomInt(0, 361), 75, 100);
             }
@@ -171,6 +177,12 @@ const s = (p: p5) => {
             grapics.rect(0, 2 * index * LINE_THICKNESS, grapics.width, LINE_THICKNESS);
         });
         return grapics;
+    };
+
+    const drawImageWithinGrid = (graphics: p5.Graphics, grid: Grid): p5.Graphics => {
+        const firstPoint = grid.get()[0][0];
+        graphics.image(bgImage, firstPoint.x, firstPoint.y, grid.width, grid.height);
+        return graphics;
     };
 
     // UTILITES

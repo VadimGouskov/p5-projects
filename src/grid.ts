@@ -10,12 +10,16 @@ export class GridPoint {
 export class Grid {
     amountX: number;
     amountY: number;
+    width: number;
+    height: number;
 
     private grid: GridPoint[][] = [[]];
 
     constructor(amountX: number, amountY: number, width: number, height: number) {
         this.amountX = amountX;
         this.amountY = amountY;
+        this.width = width;
+        this.height = height;
 
         const stepX = width / (amountX - 1);
         const stepY = height / (amountY - 1);
