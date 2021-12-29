@@ -13,6 +13,8 @@ export class Grid {
     width: number;
     height: number;
 
+    private randomFunction: () => number;
+
     private grid: GridPoint[][] = [[]];
 
     constructor(amountX: number, amountY: number, width: number, height: number) {
@@ -31,6 +33,8 @@ export class Grid {
                 this.grid[i][j] = new GridPoint(j * stepX, i * stepY);
             }
         }
+
+        this.randomFunction = Math.random;
     }
 
     get flat(): GridPoint[] {
@@ -49,13 +53,6 @@ export class Grid {
         return this.grid[yindex][xIndex];
     }
 
-    getRandomPoint(): GridPoint {
-        const xIndex = Math.floor(Math.random() * (this.amountX - 1));
-        const yIndex = Math.floor(Math.random() * (this.amountY - 1));
-
-        return this.grid[yIndex][xIndex];
-    }
-
     slice(startYIndex: number, stopYIndex: number, startXIndex: number, stopXIndex: number): GridPoint[][] {
         return this.grid.slice(startYIndex, stopYIndex + 1).map((i) => i.slice(startXIndex, stopXIndex + 1));
     }
@@ -63,8 +60,23 @@ export class Grid {
     draw(func: (x: number, y: number) => void): void {
         this.flat.forEach((point) => func(point.x, point.y));
     }
-}
 
+    // Random function
+
+    // must be a random function generator between 0, 1
+    setRandomFunction(func: () => number): void {
+        this.randomFunction = func;
+    }
+
+    getRandomPoint(): GridPoint {
+        const xIndex = Math.floor(this.randomFunction() * (this.amountX - 1));
+        const yIndex = Math.floor(this.randomFunction() * (this.amountY - 1));
+
+        console.log(this.randomFunction);
+
+        return this.grid[yIndex][xIndex];
+    }
+}
 export class CountingGrid {
     grid: Grid;
     pointCounters: number[][] = [[]];
