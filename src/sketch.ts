@@ -3,26 +3,30 @@ import { FileClient, getCanvasImage } from 'p5-file-client';
 import { Grid, GridPoint } from './grid';
 
 const s = (p: p5) => {
-    const CANVAS_WIDTH = 4000;
-    const CANVAS_HEIGHT = 4000;
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 1000;
 
     const SHAPE_GRID_DENSITY = 20;
     const DOT_GRID_DENSITY = 40;
+    const TRIANGLE_GRID_DENSITY = 20;
+
     const SHAPE_GRID_AMOUNT = 4;
     const DOT_GRID_AMOUNT = 1;
 
     const LINE_THICKNESS = 20;
+    const TRIANGLE_SIZE = CANVAS_WIDTH / TRIANGLE_GRID_DENSITY / 2;
+    const TRIANGLE_CUTTOF = 0.45;
+    const TRIANGLE_NOISE_ATTENUATION = 200;
 
     let fileClient: FileClient;
     let shapeGrid: Grid;
     let dotGrid: Grid;
+    let triangleGrid: Grid;
 
     let bgImage: p5.Image;
-    let anchorIcon: p5.Image;
 
     p.preload = () => {
-        bgImage = p.loadImage('http://localhost:3000/sunset3.jpg');
-        anchorIcon = p.loadImage('http://localhost:3000/anchor.jpg');
+        bgImage = p.loadImage('http://localhost:3000/havenhuis.jpg');
     };
 
     p.setup = () => {
@@ -40,67 +44,28 @@ const s = (p: p5) => {
 
         shapeGrid = new Grid(SHAPE_GRID_DENSITY, SHAPE_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
         dotGrid = new Grid(DOT_GRID_DENSITY, DOT_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
+        triangleGrid = new Grid(TRIANGLE_GRID_DENSITY, TRIANGLE_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         shapeGrid.setRandomFunction(p.random);
         dotGrid.setRandomFunction(p.random);
     };
 
     p.draw = () => {
-        let randomSeed = randomInt(0, 1000000);
-        randomSeed = 191437;
+        const randomSeed = randomInt(0, 1000000);
+        // randomSeed = 191437;
         p.randomSeed(randomSeed);
+        p.noiseSeed(randomSeed);
         console.log(randomSeed);
 
-        //p.background(0);
+        p.background(255);
 
         p.fill('#0000ff');
         p.noStroke();
 
-        // DOTS
-        iterator(DOT_GRID_AMOUNT, () => {
-            const slicedGrid = randomGridSlice(dotGrid, { minWidth: 4, maxWidth: 8, minHeight: 20, maxHeight: 36 });
-            p.fill(0, 0, 100);
-            slicedGrid.draw((x: number, y: number) => p.ellipse(x, y, 24, 24));
-            //slicedGrid.draw((x: number, y: number) => p.image(anchorIcon, x, y, 20, 20));
-        });
-
-        // SHAPES
-        for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
-            const mainShape = i === 2;
-            const slicedGrid = randomGridSlice(shapeGrid, {
-                minWidth: mainShape ? 8 : 4,
-                maxWidth: mainShape ? 16 : 8,
-                minHeight: mainShape ? 16 : 4,
-                maxHeight: mainShape ? 20 : 8,
-            });
-
-            // Draw the bg
-            let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
-            bgGraphics.colorMode(bgGraphics.HSB, 360, 100, 100);
-            if (mainShape) {
-                //bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
-
-                bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
-                //bgGraphics = drawLineBG(bgGraphics);
-            } else {
-                bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
-            }
-
-            // Draw the mask
-            const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
-            maskGraphics.fill(0);
-            maskGraphics.beginShape();
-            getRandomShape(slicedGrid).forEach((point) => {
-                maskGraphics.vertex(point.x, point.y);
-            });
-            maskGraphics.endShape(p.CLOSE);
-
-            // Mask the BG
-            const bgImage = bgGraphics.get();
-            bgImage.mask(maskGraphics.get());
-            //Draw the masked image
-            p.image(bgImage, 0, 0);
-        }
+        // DRAW
+        triangleGrid.draw(drawTriangle);
+        // drawDots();
+        drawShapes();
 
         // EXPORT
         const image64 = getCanvasImage('sketch');
@@ -217,6 +182,71 @@ const s = (p: p5) => {
         const yIndex = Math.floor(p.random() * (grid.amountY - 1));
 
         return grid.get()[yIndex][xIndex];
+    };
+
+    const drawTriangle = (x: number, y: number) => {
+        const noise = p.noise(x / TRIANGLE_NOISE_ATTENUATION, y / TRIANGLE_NOISE_ATTENUATION);
+        if (noise > TRIANGLE_CUTTOF) return;
+
+        const color = randomInt(20, 70);
+        if (noise > TRIANGLE_CUTTOF - 0.03) {
+            p.noFill();
+            p.stroke(color);
+            p.strokeWeight(2);
+        } else {
+            p.noStroke();
+            p.fill(color);
+        }
+
+        p.triangle(x, y - TRIANGLE_SIZE, x - TRIANGLE_SIZE, y + TRIANGLE_SIZE, x + TRIANGLE_SIZE, y + TRIANGLE_SIZE);
+    };
+
+    const drawDots = () => {
+        // DOTS
+        iterator(DOT_GRID_AMOUNT, () => {
+            const slicedGrid = randomGridSlice(dotGrid, { minWidth: 4, maxWidth: 8, minHeight: 20, maxHeight: 36 });
+            p.fill(0, 0, 0);
+            slicedGrid.draw((x: number, y: number) => p.rect(x, y, 6, 6));
+            //slicedGrid.draw((x: number, y: number) => p.image(anchorIcon, x, y, 20, 20));
+        });
+    };
+
+    const drawShapes = () => {
+        for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
+            const mainShape = i === SHAPE_GRID_AMOUNT - 1;
+            const slicedGrid = randomGridSlice(shapeGrid, {
+                minWidth: mainShape ? 8 : 4,
+                maxWidth: mainShape ? 16 : 8,
+                minHeight: mainShape ? 16 : 4,
+                maxHeight: mainShape ? 20 : 8,
+            });
+
+            // Draw the bg
+            let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+            bgGraphics.colorMode(bgGraphics.HSB, 360, 100, 100);
+            if (mainShape) {
+                //bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
+                bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
+                //bgGraphics = drawLineBG(bgGraphics);
+            } else {
+                bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
+            }
+
+            // Draw the mask
+            const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+            maskGraphics.fill(0);
+            maskGraphics.beginShape();
+            getRandomShape(slicedGrid).forEach((point) => {
+                maskGraphics.vertex(point.x, point.y);
+            });
+            maskGraphics.endShape(p.CLOSE);
+
+            // Mask the BG
+            const bgImage = bgGraphics.get();
+            bgImage.mask(maskGraphics.get());
+            //Draw the masked image
+            p.image(bgImage, 0, 0);
+        }
     };
 
     // EVENTS
