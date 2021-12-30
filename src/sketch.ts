@@ -25,6 +25,8 @@ const s = (p: p5) => {
 
     let bgImage: p5.Image;
 
+    let colors: string[] = [];
+
     p.preload = () => {
         bgImage = p.loadImage('http://localhost:3000/havenhuis.jpg');
     };
@@ -52,7 +54,7 @@ const s = (p: p5) => {
 
     p.draw = () => {
         const randomSeed = randomInt(0, 1000000);
-        // randomSeed = 191437;
+        // randomSeed = 868799;
         p.randomSeed(randomSeed);
         p.noiseSeed(randomSeed);
         console.log(randomSeed);
@@ -61,6 +63,9 @@ const s = (p: p5) => {
 
         p.fill('#0000ff');
         p.noStroke();
+
+        //https://coolors.co/3c4d61-6e0d25-ffa9e7-ff8966-ff3864
+        colors = ['#3C4D61', '#6E0D25', '#FFA9E7', '#FF8966', '#FF3864'];
 
         // DRAW
         triangleGrid.draw(drawTriangle);
@@ -215,8 +220,8 @@ const s = (p: p5) => {
         for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
             const mainShape = i === SHAPE_GRID_AMOUNT - 1;
             const slicedGrid = randomGridSlice(shapeGrid, {
-                minWidth: mainShape ? 8 : 4,
-                maxWidth: mainShape ? 16 : 8,
+                minWidth: mainShape ? 16 : 4,
+                maxWidth: mainShape ? 20 : 8,
                 minHeight: mainShape ? 16 : 4,
                 maxHeight: mainShape ? 20 : 8,
             });
@@ -229,7 +234,8 @@ const s = (p: p5) => {
                 bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
                 //bgGraphics = drawLineBG(bgGraphics);
             } else {
-                bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
+                const shapeColor = colors.pop() ?? '#777777';
+                bgGraphics.background(shapeColor);
             }
 
             // Draw the mask
