@@ -10,8 +10,7 @@ const s = (p: p5) => {
     const DOT_GRID_DENSITY = 40;
     const TRIANGLE_GRID_DENSITY = 20;
 
-    const SHAPE_GRID_AMOUNT = 4;
-    const DOT_GRID_AMOUNT = 1;
+    const SHAPE_GRID_AMOUNT = 3;
 
     const LINE_THICKNESS = 20;
     const TRIANGLE_SIZE = CANVAS_WIDTH / TRIANGLE_GRID_DENSITY / 2;
@@ -70,7 +69,8 @@ const s = (p: p5) => {
         // DRAW
         triangleGrid.draw(drawTriangle);
         // drawDots();
-        drawShapes();
+        drawColorShapes();
+        drawImageShape();
 
         // EXPORT
         const image64 = getCanvasImage('sketch');
@@ -163,25 +163,6 @@ const s = (p: p5) => {
         return grapics;
     };
 
-    const drawImageWithinGrid = (graphics: p5.Graphics, grid: Grid): p5.Graphics => {
-        const firstPoint = grid.get()[0][0];
-        graphics.image(bgImage, firstPoint.x, firstPoint.y, CANVAS_WIDTH, CANVAS_HEIGHT);
-        return graphics;
-    };
-
-    // UTILITES
-    const randomInt = (min: number, max: number): number => {
-        return Math.floor(p.random() * (max - min)) + min;
-    };
-
-    const iterator = (amount: number, func: (index: number) => void) => {
-        Array(amount)
-            .fill(0)
-            .forEach((e, i) => func(i));
-    };
-
-    const chance = (n: number): boolean => Math.random() < n;
-
     const getRandomGridPoint = (grid: Grid): GridPoint => {
         const xIndex = Math.floor(p.random() * (grid.amountX - 1));
         const yIndex = Math.floor(p.random() * (grid.amountY - 1));
@@ -206,53 +187,100 @@ const s = (p: p5) => {
         p.triangle(x, y - TRIANGLE_SIZE, x - TRIANGLE_SIZE, y + TRIANGLE_SIZE, x + TRIANGLE_SIZE, y + TRIANGLE_SIZE);
     };
 
-    const drawDots = () => {
-        // DOTS
-        iterator(DOT_GRID_AMOUNT, () => {
-            const slicedGrid = randomGridSlice(dotGrid, { minWidth: 4, maxWidth: 8, minHeight: 20, maxHeight: 36 });
-            p.fill(0, 0, 0);
-            slicedGrid.draw((x: number, y: number) => p.rect(x, y, 6, 6));
-            //slicedGrid.draw((x: number, y: number) => p.image(anchorIcon, x, y, 20, 20));
-        });
-    };
-
-    const drawShapes = () => {
+    const drawColorShapes = () => {
         for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
-            const mainShape = i === SHAPE_GRID_AMOUNT - 1;
             const slicedGrid = randomGridSlice(shapeGrid, {
-                minWidth: mainShape ? 16 : 4,
-                maxWidth: mainShape ? 20 : 8,
-                minHeight: mainShape ? 16 : 4,
-                maxHeight: mainShape ? 20 : 8,
+                minWidth: 4,
+                maxWidth: 8,
+                minHeight: 4,
+                maxHeight: 8,
             });
 
             // Draw the bg
-            let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+            const bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
             bgGraphics.colorMode(bgGraphics.HSB, 360, 100, 100);
-            if (mainShape) {
-                //bgGraphics.background(randomInt(200, 250), randomInt(75, 100), 100);
-                bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
-                //bgGraphics = drawLineBG(bgGraphics);
-            } else {
-                const shapeColor = colors.pop() ?? '#777777';
-                bgGraphics.background(shapeColor);
-            }
 
-            // Draw the mask
-            const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
-            maskGraphics.fill(0);
-            maskGraphics.beginShape();
-            getRandomShape(slicedGrid).forEach((point) => {
-                maskGraphics.vertex(point.x, point.y);
-            });
-            maskGraphics.endShape(p.CLOSE);
+            const shapeColor = colors.pop() ?? '#777777';
+            bgGraphics.background(shapeColor);
 
-            // Mask the BG
-            const bgImage = bgGraphics.get();
-            bgImage.mask(maskGraphics.get());
-            //Draw the masked image
-            p.image(bgImage, 0, 0);
+            const randomShape = getRandomShape(slicedGrid);
+            const maskGraphics = createGraphicsFromShape(randomShape);
+            maskGraphicsWithShape(bgGraphics, maskGraphics);
         }
+    };
+
+    const drawImageShape = () => {
+        const slicedGrid = randomGridSlice(shapeGrid, {
+            minWidth: 16,
+            maxWidth: 20,
+            minHeight: 16,
+            maxHeight: 20,
+        });
+        let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+        bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
+        p.fill('#f00');
+
+        const randomShape = getRandomShape(slicedGrid);
+        const centroid = getCentroid(randomShape);
+        const maskGraphics = createGraphicsFromShape(randomShape);
+
+        maskGraphicsWithShape(bgGraphics, maskGraphics);
+        p.circle(centroid.x, centroid.y, 20);
+    };
+
+    const maskGraphicsWithShape = (graphics: p5.Graphics, maskGraphics: p5.Graphics) => {
+        // Mask the BG
+        const bgImage = graphics.get();
+        bgImage.mask(maskGraphics.get());
+        //Draw the masked image
+        p.image(bgImage, 0, 0);
+    };
+
+    const drawImageWithinGrid = (graphics: p5.Graphics, grid: Grid): p5.Graphics => {
+        const firstPoint = grid.get()[0][0];
+        graphics.image(bgImage, firstPoint.x, firstPoint.y, CANVAS_WIDTH, CANVAS_HEIGHT);
+        return graphics;
+    };
+
+    const createGraphicsFromShape = (gridPoints: GridPoint[]): p5.Graphics => {
+        // Draw the mask
+        const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+        maskGraphics.fill(0);
+        maskGraphics.beginShape();
+
+        gridPoints.forEach((point) => {
+            maskGraphics.vertex(point.x, point.y);
+        });
+
+        maskGraphics.endShape(p.CLOSE);
+        return maskGraphics;
+    };
+
+    // UTILITES
+    const randomInt = (min: number, max: number): number => {
+        return Math.floor(p.random() * (max - min)) + min;
+    };
+
+    const iterator = (amount: number, func: (index: number) => void) => {
+        Array(amount)
+            .fill(0)
+            .forEach((e, i) => func(i));
+    };
+
+    const chance = (n: number): boolean => Math.random() < n;
+
+    const getCentroid = (points: GridPoint[]): GridPoint => {
+        const x = points.reduce((acc, cur) => {
+            acc += cur.x;
+            return acc;
+        }, 0);
+
+        const y = points.reduce((acc, cur) => {
+            acc += cur.y;
+            return acc;
+        }, 0);
+
+        return new GridPoint(x / points.length, y / points.length);
     };
 
     // EVENTS
