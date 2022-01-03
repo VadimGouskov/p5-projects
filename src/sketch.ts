@@ -70,6 +70,7 @@ const s = (p: p5) => {
         triangleGrid.draw(drawTriangle);
         // drawDots();
         drawColorShapes();
+
         drawImageShape();
 
         // EXPORT
@@ -204,7 +205,8 @@ const s = (p: p5) => {
             bgGraphics.background(shapeColor);
 
             const randomShape = getRandomShape(slicedGrid);
-            const maskGraphics = createGraphicsFromShape(randomShape);
+            const contourPoints = createContour(randomShape, 0.5);
+            const maskGraphics = createGraphicsFromShape(randomShape, contourPoints);
             maskGraphicsWithShape(bgGraphics, maskGraphics);
         }
     };
@@ -221,11 +223,9 @@ const s = (p: p5) => {
         p.fill('#f00');
 
         const randomShape = getRandomShape(slicedGrid);
-        const centroid = getCentroid(randomShape);
         const maskGraphics = createGraphicsFromShape(randomShape);
 
         maskGraphicsWithShape(bgGraphics, maskGraphics);
-        p.circle(centroid.x, centroid.y, 20);
     };
 
     const maskGraphicsWithShape = (graphics: p5.Graphics, maskGraphics: p5.Graphics) => {
@@ -242,18 +242,44 @@ const s = (p: p5) => {
         return graphics;
     };
 
-    const createGraphicsFromShape = (gridPoints: GridPoint[]): p5.Graphics => {
-        // Draw the mask
-        const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
-        maskGraphics.fill(0);
-        maskGraphics.beginShape();
+    const createContour = (shape: GridPoint[], depth: number): GridPoint[] => {
+        // interpolate to center
+        const centroid = getCentroid(shape);
+        const vc = p.createVector(centroid.x, centroid.y);
+        let contourPoints = [...shape].reverse();
+
+        contourPoints = contourPoints.map((point) => {
+            const v = p.createVector(point.x, point.y);
+            const interpolatedV = p5.Vector.lerp(v, vc, depth);
+            return new GridPoint(interpolatedV.x, interpolatedV.y);
+        });
+        return contourPoints;
+    };
+
+    const createGraphicsFromShape = (gridPoints: GridPoint[], contour?: GridPoint[]): p5.Graphics => {
+        const centre = getCentroid(gridPoints);
+
+        // Draw the Mask Graphics
+        const mg = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+        mg.fill(0);
+        mg.beginShape();
 
         gridPoints.forEach((point) => {
-            maskGraphics.vertex(point.x, point.y);
+            mg.vertex(point.x, point.y);
         });
 
-        maskGraphics.endShape(p.CLOSE);
-        return maskGraphics;
+        if (!!contour) {
+            // cut out optional contout
+            mg.beginContour();
+            contour.forEach((point) => {
+                mg.vertex(point.x, point.y);
+            });
+            mg.endContour();
+        }
+
+        mg.endShape(p.CLOSE);
+
+        return mg;
     };
 
     // UTILITES
