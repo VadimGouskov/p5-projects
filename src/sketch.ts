@@ -37,6 +37,9 @@ const s = (p: p5) => {
         p.colorMode(p.HSB, 360, 100, 100);
         p.noLoop();
 
+        //https://coolors.co/3c4d61-6e0d25-ffa9e7-ff8966-ff3864
+        colors = ['#3C4D61', '#6E0D25', '#FFA9E7', '#FF8966', '#FF3864'];
+
         fileClient = new FileClient(
             undefined,
             undefined,
@@ -63,15 +66,13 @@ const s = (p: p5) => {
         p.fill('#0000ff');
         p.noStroke();
 
-        //https://coolors.co/3c4d61-6e0d25-ffa9e7-ff8966-ff3864
-        colors = ['#3C4D61', '#6E0D25', '#FFA9E7', '#FF8966', '#FF3864'];
+        // CREATE
+        const mainImage = createMainImage();
+        const colorImages = createColorImages();
 
         // DRAW
         triangleGrid.draw(drawTriangle);
-        // drawDots();
-        drawImageShape();
-
-        drawColorShapes();
+        [...colorImages, mainImage].forEach((image) => p.image(image, 0, 0));
 
         // EXPORT
         const image64 = getCanvasImage('sketch');
@@ -145,7 +146,6 @@ const s = (p: p5) => {
         const indexXEnd = randomInt(indexXMinEnd, indexXMaxEnd);
 
         const slicedGrid = grid.slice(indexYStart, indexYEnd, indexXStart, indexXEnd);
-        slicedGrid.draw((x, y) => p.circle(x, y, 20));
         return slicedGrid;
     };
 
@@ -185,8 +185,8 @@ const s = (p: p5) => {
         p.triangle(x, y - TRIANGLE_SIZE, x - TRIANGLE_SIZE, y + TRIANGLE_SIZE, x + TRIANGLE_SIZE, y + TRIANGLE_SIZE);
     };
 
-    const drawColorShapes = () => {
-        const countouredIndex = randomInt(0, SHAPE_GRID_AMOUNT);
+    const createColorImages = (): p5.Image[] => {
+        const colorShapes: p5.Image[] = [];
         for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
             const slicedGrid = randomGridSlice(shapeGrid, {
                 minWidth: 4,
@@ -203,18 +203,18 @@ const s = (p: p5) => {
             bgGraphics.background(shapeColor);
 
             const randomShape = getRandomShape(slicedGrid);
-            let maskGraphics: p5.Graphics;
-            if (i === 5) {
-                const contourPoints = createContour(randomShape, 0.666);
-                maskGraphics = createGraphicsFromShape(randomShape, contourPoints);
-            } else {
-                maskGraphics = createGraphicsFromShape(randomShape);
-            }
-            maskGraphicsWithShape(bgGraphics, maskGraphics);
+            const maskGraphics = createGraphicsFromShape(randomShape);
+
+            // Mask the BG
+            const shapeImage = bgGraphics.get();
+            shapeImage.mask(maskGraphics.get());
+
+            colorShapes.push(shapeImage);
         }
+        return colorShapes;
     };
 
-    const drawImageShape = () => {
+    const createMainImage = (): p5.Image => {
         const slicedGrid = randomGridSlice(shapeGrid, {
             minWidth: 16,
             maxWidth: 20,
@@ -226,18 +226,13 @@ const s = (p: p5) => {
         p.fill('#f00');
 
         const randomShape = getRandomShape(slicedGrid);
-
         const maskGraphics = createGraphicsFromShape(randomShape);
 
-        maskGraphicsWithShape(bgGraphics, maskGraphics);
-    };
-
-    const maskGraphicsWithShape = (graphics: p5.Graphics, maskGraphics: p5.Graphics) => {
         // Mask the BG
-        const bgImage = graphics.get();
-        bgImage.mask(maskGraphics.get());
-        //Draw the masked image
-        p.image(bgImage, 0, 0);
+        const mainImage = bgGraphics.get();
+        mainImage.mask(maskGraphics.get());
+
+        return mainImage;
     };
 
     const drawImageWithinGrid = (graphics: p5.Graphics, grid: Grid): p5.Graphics => {
