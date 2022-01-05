@@ -69,9 +69,9 @@ const s = (p: p5) => {
         // DRAW
         triangleGrid.draw(drawTriangle);
         // drawDots();
-        drawColorShapes();
-
         drawImageShape();
+
+        drawColorShapes();
 
         // EXPORT
         const image64 = getCanvasImage('sketch');
@@ -112,9 +112,7 @@ const s = (p: p5) => {
         startXIndex: number,
         stopXIndex: number,
     ): GridPoint => {
-        const slice = grid.slice(startYIndex, stopYIndex, startXIndex, stopXIndex);
-        const slicedGrid = new Grid(slice[0].length, slice.length, 0, 0);
-        slicedGrid.set(slice);
+        const slicedGrid = grid.slice(startYIndex, stopYIndex, startXIndex, stopXIndex);
         // slicedGrid.setRandomFunction(p.random);
         const randomPoint = getRandomGridPoint(slicedGrid);
         return randomPoint;
@@ -146,9 +144,8 @@ const s = (p: p5) => {
         const indexXMaxEnd = Math.min(indexXStart + maxWidth, grid.amountX - 1);
         const indexXEnd = randomInt(indexXMinEnd, indexXMaxEnd);
 
-        const slice = grid.slice(indexYStart, indexYEnd, indexXStart, indexXEnd);
-        const slicedGrid = new Grid(slice[0].length, slice.length, 0, 0);
-        slicedGrid.set(slice);
+        const slicedGrid = grid.slice(indexYStart, indexYEnd, indexXStart, indexXEnd);
+        slicedGrid.draw((x, y) => p.circle(x, y, 20));
         return slicedGrid;
     };
 
@@ -189,6 +186,7 @@ const s = (p: p5) => {
     };
 
     const drawColorShapes = () => {
+        const countouredIndex = randomInt(0, SHAPE_GRID_AMOUNT);
         for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
             const slicedGrid = randomGridSlice(shapeGrid, {
                 minWidth: 4,
@@ -205,8 +203,13 @@ const s = (p: p5) => {
             bgGraphics.background(shapeColor);
 
             const randomShape = getRandomShape(slicedGrid);
-            const contourPoints = createContour(randomShape, 0.5);
-            const maskGraphics = createGraphicsFromShape(randomShape, contourPoints);
+            let maskGraphics: p5.Graphics;
+            if (i === 5) {
+                const contourPoints = createContour(randomShape, 0.666);
+                maskGraphics = createGraphicsFromShape(randomShape, contourPoints);
+            } else {
+                maskGraphics = createGraphicsFromShape(randomShape);
+            }
             maskGraphicsWithShape(bgGraphics, maskGraphics);
         }
     };
@@ -223,6 +226,7 @@ const s = (p: p5) => {
         p.fill('#f00');
 
         const randomShape = getRandomShape(slicedGrid);
+
         const maskGraphics = createGraphicsFromShape(randomShape);
 
         maskGraphicsWithShape(bgGraphics, maskGraphics);

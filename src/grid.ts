@@ -53,8 +53,11 @@ export class Grid {
         return this.grid[yindex][xIndex];
     }
 
-    slice(startYIndex: number, stopYIndex: number, startXIndex: number, stopXIndex: number): GridPoint[][] {
-        return this.grid.slice(startYIndex, stopYIndex + 1).map((i) => i.slice(startXIndex, stopXIndex + 1));
+    slice(startYIndex: number, stopYIndex: number, startXIndex: number, stopXIndex: number): Grid {
+        const slice = this.grid.slice(startYIndex, stopYIndex + 1).map((i) => i.slice(startXIndex, stopXIndex + 1));
+        const gridFromSlice = new Grid(slice[0].length, slice.length, 0, 0);
+        gridFromSlice.set(slice);
+        return gridFromSlice;
     }
 
     draw(func: (x: number, y: number) => void): void {
