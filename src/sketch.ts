@@ -37,9 +37,6 @@ const s = (p: p5) => {
         p.colorMode(p.HSB, 360, 100, 100);
         p.noLoop();
 
-        //https://coolors.co/3c4d61-6e0d25-ffa9e7-ff8966-ff3864
-        colors = ['#3C4D61', '#6E0D25', '#FFA9E7', '#FF8966', '#FF3864'];
-
         fileClient = new FileClient(
             undefined,
             undefined,
@@ -66,9 +63,16 @@ const s = (p: p5) => {
         p.fill('#0000ff');
         p.noStroke();
 
+        //https://coolors.co/3c4d61-6e0d25-ffa9e7-ff8966-ff3864
+        colors = ['#3C4D61', '#6E0D25', '#FFA9E7', '#FF8966', '#FF3864'];
+
         // CREATE
-        const mainImage = createMainImage();
-        const colorImages = createColorImages();
+        const mainGrid = createMainGrid();
+
+        const mainShape = getRandomShape(mainGrid);
+        const mainImage = createMainImage(mainShape, mainGrid);
+
+        const colorImages = createColorImages(mainShape);
 
         // DRAW
         triangleGrid.draw(drawTriangle);
@@ -185,7 +189,7 @@ const s = (p: p5) => {
         p.triangle(x, y - TRIANGLE_SIZE, x - TRIANGLE_SIZE, y + TRIANGLE_SIZE, x + TRIANGLE_SIZE, y + TRIANGLE_SIZE);
     };
 
-    const createColorImages = (): p5.Image[] => {
+    const createColorImages = (blockingShape: GridPoint[]): p5.Image[] => {
         const colorShapes: p5.Image[] = [];
         for (let i = 0; i < SHAPE_GRID_AMOUNT; i++) {
             const slicedGrid = randomGridSlice(shapeGrid, {
@@ -202,7 +206,13 @@ const s = (p: p5) => {
             const shapeColor = colors.pop() ?? '#777777';
             bgGraphics.background(shapeColor);
 
-            const randomShape = getRandomShape(slicedGrid);
+            let randomShape = getRandomShape(slicedGrid);
+            // check if shape is within the main shape
+            const isBlocked = isShapeWithinShape(blockingShape, randomShape);
+            if (isBlocked) {
+                randomShape = relocateShape(blockingShape, randomShape);
+            }
+
             const maskGraphics = createGraphicsFromShape(randomShape);
 
             // Mask the BG
@@ -214,19 +224,21 @@ const s = (p: p5) => {
         return colorShapes;
     };
 
-    const createMainImage = (): p5.Image => {
-        const slicedGrid = randomGridSlice(shapeGrid, {
+    const createMainGrid = (): Grid => {
+        return randomGridSlice(shapeGrid, {
             minWidth: 16,
             maxWidth: 20,
             minHeight: 16,
             maxHeight: 20,
         });
+    };
+
+    const createMainImage = (shape: GridPoint[], grid: Grid): p5.Image => {
         let bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
-        bgGraphics = drawImageWithinGrid(bgGraphics, slicedGrid);
+        bgGraphics = drawImageWithinGrid(bgGraphics, grid);
         p.fill('#f00');
 
-        const randomShape = getRandomShape(slicedGrid);
-        const maskGraphics = createGraphicsFromShape(randomShape);
+        const maskGraphics = createGraphicsFromShape(shape);
 
         // Mask the BG
         const mainImage = bgGraphics.get();
@@ -281,6 +293,22 @@ const s = (p: p5) => {
         return mg;
     };
 
+    const relocateShape = (outerShape: GridPoint[], shapeToRelocate: GridPoint[]): GridPoint[] => {
+        // translate shape to random corner
+        const cornerPoint = outerShape[randomInt(0, outerShape.length - 1)];
+        const shapeCenter = getCentroid(shapeToRelocate);
+        const diffX = cornerPoint.x - shapeCenter.x;
+        const diffY = cornerPoint.y - shapeCenter.y;
+        // to avoid adjusting the original grid => deep copy the array
+        // TODO deep copy in Grid class
+        const shapeCopy = JSON.parse(JSON.stringify(shapeToRelocate)) as GridPoint[];
+        return shapeCopy.map((point) => {
+            point.x += diffX;
+            point.y += diffY;
+            return point;
+        });
+    };
+
     // UTILITES
     const randomInt = (min: number, max: number): number => {
         return Math.floor(p.random() * (max - min)) + min;
@@ -307,6 +335,26 @@ const s = (p: p5) => {
 
         return new GridPoint(x / points.length, y / points.length);
     };
+
+    const isShapeWithinShape = (outerShape: GridPoint[], innerShape: GridPoint[]): boolean => {
+        for (const shape of innerShape) {
+            if (!pointInPoly(outerShape, shape)) return false;
+        }
+        return true;
+    };
+
+    //https://editor.p5js.org/makio135/sketches/O9xQNN6Q
+    function pointInPoly(verts: GridPoint[], pt: GridPoint) {
+        let c = false;
+        for (let i = 0, j = verts.length - 1; i < verts.length; j = i++) {
+            if (
+                verts[i].y > pt.y != verts[j].y > pt.y &&
+                pt.x < ((verts[j].x - verts[i].x) * (pt.y - verts[i].y)) / (verts[j].y - verts[i].y) + verts[i].x
+            )
+                c = !c;
+        }
+        return c;
+    }
 
     // EVENTS
     p.mouseClicked = () => {
