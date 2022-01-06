@@ -60,8 +60,8 @@ export class Grid {
         return gridFromSlice;
     }
 
-    draw(func: (x: number, y: number) => void): void {
-        this.flat.forEach((point) => func(point.x, point.y));
+    draw(func: (point: GridPoint) => void): void {
+        this.flat.forEach((point) => func(point));
     }
 
     // Random function

@@ -172,7 +172,7 @@ const s = (p: p5) => {
         return grid.get()[yIndex][xIndex];
     };
 
-    const drawTriangle = (x: number, y: number) => {
+    const drawTriangle = ({ x, y }: GridPoint) => {
         const noise = p.noise(x / TRIANGLE_NOISE_ATTENUATION, y / TRIANGLE_NOISE_ATTENUATION);
         if (noise > TRIANGLE_CUTTOF) return;
 
@@ -226,9 +226,9 @@ const s = (p: p5) => {
 
     const createMainGrid = (): Grid => {
         return randomGridSlice(shapeGrid, {
-            minWidth: 16,
+            minWidth: 18,
             maxWidth: 20,
-            minHeight: 16,
+            minHeight: 18,
             maxHeight: 20,
         });
     };
@@ -303,8 +303,9 @@ const s = (p: p5) => {
         // TODO deep copy in Grid class
         const shapeCopy = JSON.parse(JSON.stringify(shapeToRelocate)) as GridPoint[];
         return shapeCopy.map((point) => {
-            point.x += diffX;
-            point.y += diffY;
+            // magic numbers: make sure the shape rolaocates organically but does not fly of the screen or stays hidden
+            point.x += diffX * p.random(0.95, 1.08);
+            point.y += diffY * p.random(0.95, 1.08);
             return point;
         });
     };
