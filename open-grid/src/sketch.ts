@@ -36,11 +36,12 @@ const s = (p: p5) => {
         p.ellipseMode(p.CENTER);
         p.colorMode(p.HSB, 360, 100, 100);
         p.noLoop();
+        //p.frameRate(0.1);
 
         fileClient = new FileClient(
             undefined,
             undefined,
-            '/home/vadim/Projects/creative-coding/p5-projects/open-grid/progress',
+            '/home/vadim/Projects/creative-coding/p5-projects/open-grid/export/images',
         );
 
         shapeGrid = new Grid(SHAPE_GRID_DENSITY, SHAPE_GRID_DENSITY, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -58,7 +59,7 @@ const s = (p: p5) => {
         p.noiseSeed(randomSeed);
         console.log(randomSeed);
 
-        p.background(255);
+        p.background(0, 0, 100);
 
         p.fill('#0000ff');
         p.noStroke();
