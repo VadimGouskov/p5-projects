@@ -1,17 +1,17 @@
 import p5 from 'p5';
-import { Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
+import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
 import { FileClient, getCanvasImage } from 'p5-file-client';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
 
 let grid: Grid;
-const COLS = 10;
-const ROWS = 10;
 
-let tileGrid: Grid;
-const TILE_WIDTH = CANVAS_WIDTH / COLS;
-const TILE_HEIGHT = CANVAS_HEIGHT / ROWS;
+const MAX_COLS = 5;
+const MIN_COLS = 2;
+
+const MAX_DEPTH = 4;
+
 const TILE_COLS = 3;
 const TILE_ROWS = 3;
 const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
@@ -19,14 +19,15 @@ const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
 const s = (p: p5) => {
     let fileClient: FileClient;
     const sketchName = 'gridorama';
+    let seed = 0;
 
     p.setup = () => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
         canvas.parent('sketch');
         p.noLoop();
 
-        grid = new Grid(COLS, ROWS, CANVAS_WIDTH, CANVAS_HEIGHT);
-        tileGrid = new Grid(TILE_COLS, TILE_ROWS, TILE_WIDTH, TILE_HEIGHT);
+        const cols = randomInt(MIN_COLS, MAX_COLS);
+        grid = new Grid(cols, cols, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         fileClient = new FileClient(
             undefined,
@@ -36,19 +37,42 @@ const s = (p: p5) => {
     };
 
     p.draw = () => {
+        seed = randomInt(0, 1000000);
+        p.randomSeed(seed);
+
         p.background(255);
         p.fill(0);
         p.ellipseMode(p.CENTER);
+        const tileWidth = CANVAS_WIDTH / grid.get()[0].length - 1;
+        recursiveGrid(grid, tileWidth, 0);
 
-        grid.draw(({ x, y }) => tile(x, y, PALLETTE));
+        //grid.draw(({ x, y }) => tile(x, y, PALLETTE));
 
         // Get base64 encoded image from current canvas
         const image64 = getCanvasImage('sketch');
-        fileClient.exportImage64(image64, '.png', sketchName);
+        fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
     };
 
-    const tile = (x: number, y: number, pallette: string[]) => {
-        const g = p.createGraphics(TILE_WIDTH, TILE_HEIGHT);
+    function recursiveGrid(grid: Grid, width: number, depth: number) {
+        if (depth >= MAX_DEPTH) return;
+
+        grid.draw(({ x, y }) => {
+            if (p.random() < 0.52) {
+                const cols = randomInt(MIN_COLS, MAX_COLS);
+                const deeperGrid = new Grid(cols, cols, width, width);
+                const points = deeperGrid.get();
+                const newWidth = points[0][0].x - points[1][0].x;
+                deeperGrid.translate(x, y);
+                recursiveGrid(deeperGrid, newWidth, depth + 1);
+                // recursive
+            } else {
+                tile(x, y, width, PALLETTE);
+            }
+        });
+    }
+
+    const tile = (x: number, y: number, width: number, pallette: string[]) => {
+        const g = p.createGraphics(width, width);
         // BG
         g.background(p.random(pallette));
 
@@ -57,9 +81,10 @@ const s = (p: p5) => {
 
         if (p.random() < 0.5) {
             g.fill(p.random(pallette));
-            g.circle(TILE_WIDTH / 2, TILE_HEIGHT / 2, TILE_HEIGHT / 3);
+            g.circle(width / 2, width / 2, width / 3);
         } else {
-            tileGrid.draw(randomColorEllipse(g, PALLETTE), selectRandom(0.1));
+            const tileGrid = new Grid(TILE_COLS, TILE_ROWS, width, width);
+            tileGrid.draw(randomColorEllipse(g, width, PALLETTE), selectRandom(0.1));
         }
 
         g.pop();
@@ -75,12 +100,12 @@ const s = (p: p5) => {
             return p.random() < chance;
         };
 
-    const randomColorEllipse = (graphics: p5.Graphics, pallette: string[]): GridFunction => {
-        graphics.strokeWeight(TILE_WIDTH / 10);
+    const randomColorEllipse = (graphics: p5.Graphics, width: number, pallette: string[]): GridFunction => {
+        graphics.strokeWeight(width / 10);
         graphics.stroke(p.random(pallette));
         graphics.noFill();
         return (point: GridPoint, col?: number, row?: number) => {
-            graphics.circle(point.x, point.y, TILE_WIDTH / 4);
+            graphics.circle(point.x, point.y, width / 4);
         };
     };
 
