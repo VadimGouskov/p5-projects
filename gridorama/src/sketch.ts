@@ -2,8 +2,8 @@ import p5 from 'p5';
 import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
 import { FileClient, getCanvasImage } from 'p5-file-client';
 
-const CANVAS_WIDTH = 500;
-const CANVAS_HEIGHT = 500;
+const CANVAS_WIDTH = 1000;
+const CANVAS_HEIGHT = 1000;
 
 let grid: Grid;
 let bgImage: p5.Image;
@@ -15,18 +15,21 @@ let upperTileCount = 0;
 
 const MAX_COLS = 4;
 const MIN_COLS = 3;
-
-const COLS = 5;
+const COLS = 3;
 const ROWS = COLS;
+// the grid origin is top left, make the last indeces fit fully on the canvas
+const ADJUSTED_GRID_WIDTH = CANVAS_WIDTH - CANVAS_WIDTH / COLS;
 
 const MAX_DEPTH = 3;
 
 const TILE_COLS = 3;
 const TILE_ROWS = 3;
-const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
+// const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
+const PALLETTE = ['#EF2D56', '#000000', '#eee5e9', '#efc88b'];
 const TILE_RADIUS_BASE = 0;
-const RECURSION_CHANCE = 0.9;
-const GHOST_TILE_CHANCE = 0.05;
+const RECURSION_CHANCE = 0.5;
+const GHOST_TILE_CHANCE = 0.02;
+const IGNORE_MASK_CHANCE = 0.02;
 
 const s = (p: p5) => {
     const blendModes = [
@@ -50,9 +53,9 @@ const s = (p: p5) => {
     let seed = 0;
 
     p.preload = () => {
-        bgImage = p.loadImage('http://localhost:3000/mas.jpg');
+        bgImage = p.loadImage('http://localhost:3000/masv2.png');
 
-        maskSource = p.loadImage('http://localhost:3000/mask-mas2.png');
+        maskSource = p.loadImage('http://localhost:3000/masv2-mask.png');
     };
 
     p.setup = () => {
@@ -61,7 +64,7 @@ const s = (p: p5) => {
         // p.noLoop();
         p.ellipseMode(p.CENTER);
 
-        grid = new Grid(COLS, COLS, CANVAS_WIDTH, CANVAS_HEIGHT);
+        grid = new Grid(COLS, ROWS, ADJUSTED_GRID_WIDTH, ADJUSTED_GRID_WIDTH);
 
         // Init Mask
         const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -99,9 +102,10 @@ const s = (p: p5) => {
         const col = upperTileCount % COLS;
         const row = p.floor(upperTileCount / COLS);
         console.log('col ', col, 'row', row);
+
         const point = grid.getPoint(col, row);
-        //p.rect(point.x, point.y, 100, 100);
-        initRecursiveGrid(point.x, point.y, 100, 100);
+
+        initRecursiveGrid(point.x, point.y, COLS, ROWS);
 
         // GHOST TILES
 
@@ -114,48 +118,60 @@ const s = (p: p5) => {
             p.noLoop();
             fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
         }
+
+        // p.circle(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, ADJUSTED_GRID_WIDTH);
     };
 
-    function initRecursiveGrid(x: number, y: number, width: number, height: number) {
-        const newGrid = new Grid(COLS, ROWS, width, height);
+    function initRecursiveGrid(x: number, y: number, cols: number, rows: number) {
+        const width = ADJUSTED_GRID_WIDTH / cols;
+        const adjustedWidth = width - width / cols;
+        const newGrid = new Grid(cols, rows, adjustedWidth, adjustedWidth);
         newGrid.translate(x, y);
-        const colWidth = width / (COLS - 1);
-        recursiveGrid(newGrid, colWidth, 0);
+        recursiveGrid(newGrid, 0);
     }
 
-    function recursiveGrid(grid: Grid, width: number, depth: number) {
+    function recursiveGrid(grid: Grid, depth: number) {
         if (depth >= MAX_DEPTH) {
             return;
         }
 
-        const tileRadius = (MAX_DEPTH - depth) * TILE_RADIUS_BASE;
+        const points = grid.get();
+        const width = points[1][0].x - points[0][0].x;
 
         grid.draw(({ x, y }) => {
-            const cols = randomInt(MIN_COLS, MAX_COLS);
-            const deeperGrid = new Grid(cols, cols, width, width);
-            const points = deeperGrid.get();
-            const newWidth = points[0][0].x - points[1][0].x;
+            const canDraw = chance(IGNORE_MASK_CHANCE) || isMasked(maskImage, x + width / 2, y + width / 2);
+            // fill the bottom lauyer fully
+            if (depth === MAX_DEPTH - 1 && canDraw) {
+                tile(x, y, width, PALLETTE);
+            }
+
+            const deeperGrid = new Grid(COLS, ROWS, width, width);
             deeperGrid.translate(x, y);
 
-            if (depth === MAX_DEPTH - 1) {
-                if (isMasked(maskImage, x + width / 2, y + width / 2)) tile(x, y, width, tileRadius, PALLETTE);
+            if (chance(RECURSION_CHANCE)) {
+                recursiveGrid(deeperGrid, depth + 1);
             } else {
-                recursiveGrid(deeperGrid, newWidth, depth + 1);
+                if (canDraw) {
+                    tile(x, y, width, PALLETTE);
+                } else {
+                    // Go deeper if tile does no fit the mask
+                    recursiveGrid(deeperGrid, depth + 1);
+                }
             }
         });
     }
 
-    const tile = (x: number, y: number, width: number, cornerRadius: number, pallette: string[]) => {
+    const tile = (x: number, y: number, width: number, pallette: string[]) => {
         const g = p.createGraphics(width, width);
         // BG
         g.fill(p.random(pallette));
         g.noStroke();
-        g.rect(0, 0, width, width, cornerRadius);
+        g.rect(0, 0, width, width);
 
         g.push();
         g.noStroke();
 
-        if (p.random() < 0.5) {
+        if (chance(1)) {
             g.fill(p.random(pallette));
             g.circle(width / 2, width / 2, width / 3);
         } else {
@@ -168,10 +184,10 @@ const s = (p: p5) => {
         p.image(g.get(), x, y);
     };
 
-    const ghostTile = (x: number, y: number, width: number, cornerRadius: number, pallette: string[]) => {
+    const ghostTile = (x: number, y: number, width: number, pallette: string[]) => {
         p.push();
         p.blendMode(p.DARKEST);
-        tile(x, y, width, cornerRadius, PALLETTE);
+        tile(x, y, width, pallette);
 
         p.pop();
     };
@@ -213,6 +229,10 @@ const s = (p: p5) => {
     };
 
     const randomInt = (min: number, max: number): number => Math.floor(p.random(min, max + 1));
+
+    const chance = (amount: number) => {
+        return p.random() < amount;
+    };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
