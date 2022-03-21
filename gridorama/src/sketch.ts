@@ -10,10 +10,16 @@ let bgImage: p5.Image;
 let maskSource: p5.Image;
 let maskImage: p5.Image;
 
+let drawBg = true;
+let upperTileCount = 0;
+
 const MAX_COLS = 4;
 const MIN_COLS = 3;
 
-const MAX_DEPTH = 4;
+const COLS = 5;
+const ROWS = COLS;
+
+const MAX_DEPTH = 3;
 
 const TILE_COLS = 3;
 const TILE_ROWS = 3;
@@ -52,8 +58,10 @@ const s = (p: p5) => {
     p.setup = () => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
         canvas.parent('sketch');
-        p.noLoop();
+        // p.noLoop();
         p.ellipseMode(p.CENTER);
+
+        grid = new Grid(COLS, COLS, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // Init Mask
         const maskGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -74,31 +82,46 @@ const s = (p: p5) => {
         // INIT
         seed = randomInt(0, 1000000);
         p.randomSeed(seed);
-        p.background(255);
         p.fill(0);
 
         // DRAW IMAGE
-        const bgRatio = bgImage.width / bgImage.height;
-        p.image(bgImage, 0, 0, CANVAS_WIDTH * bgRatio, CANVAS_HEIGHT, 0, 0);
+        if (drawBg) {
+            const bgRatio = bgImage.width / bgImage.height;
+            p.image(bgImage, 0, 0, CANVAS_WIDTH * bgRatio, CANVAS_HEIGHT, 0, 0);
+            drawBg = false;
+        }
 
         // MASK
         // p.image(maskImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // RECURSIVE GRID
 
-        const cols = randomInt(MIN_COLS, MAX_COLS);
-        grid = new Grid(cols, cols, CANVAS_WIDTH, CANVAS_HEIGHT);
-        const tileWidth = CANVAS_WIDTH / (grid.get()[0].length - 1);
-        recursiveGrid(grid, tileWidth, 0);
+        const col = upperTileCount % COLS;
+        const row = p.floor(upperTileCount / COLS);
+        console.log('col ', col, 'row', row);
+        const point = grid.getPoint(col, row);
+        //p.rect(point.x, point.y, 100, 100);
+        initRecursiveGrid(point.x, point.y, 100, 100);
 
         // GHOST TILES
-        const ghostGrid = new Grid(cols * 4, cols * 4, CANVAS_WIDTH, CANVAS_HEIGHT);
-        ghostGrid.draw(({ x, y }) => ghostTile(x, y, tileWidth / 4, 0, PALLETTE), selectRandom(GHOST_TILE_CHANCE));
 
         // Get base64 encoded image from current canvas
         const image64 = getCanvasImage('sketch');
-        fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
+        //fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
+
+        upperTileCount++;
+        if (upperTileCount === COLS * ROWS) {
+            p.noLoop();
+            fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
+        }
     };
+
+    function initRecursiveGrid(x: number, y: number, width: number, height: number) {
+        const newGrid = new Grid(COLS, ROWS, width, height);
+        newGrid.translate(x, y);
+        const colWidth = width / (COLS - 1);
+        recursiveGrid(newGrid, colWidth, 0);
+    }
 
     function recursiveGrid(grid: Grid, width: number, depth: number) {
         if (depth >= MAX_DEPTH) {
@@ -162,7 +185,12 @@ const s = (p: p5) => {
         return g.get();
     };
 
-    p.mouseClicked = () => p.redraw();
+    p.mouseClicked = () => {
+        drawBg = true;
+        upperTileCount = 0;
+        p.loop();
+        p.redraw();
+    };
 
     const selectRandom =
         (chance: number): Condition =>
