@@ -123,9 +123,8 @@ const s = (p: p5) => {
     };
 
     function initRecursiveGrid(x: number, y: number, cols: number, rows: number) {
-        const width = ADJUSTED_GRID_WIDTH / cols;
-        const adjustedWidth = width - width / cols;
-        const newGrid = new Grid(cols, rows, adjustedWidth, adjustedWidth);
+        const width = (CANVAS_WIDTH - CANVAS_WIDTH / cols) / (cols + 1);
+        const newGrid = new Grid(cols, rows, width, width);
         newGrid.translate(x, y);
         recursiveGrid(newGrid, 0);
     }
