@@ -26,7 +26,7 @@ const s = (p: p5) => {
     const sketchName = 'starter';
     let seed = 0;
 
-    p.preload = () => {};
+    // p.preload = () => {};
 
     p.setup = () => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
