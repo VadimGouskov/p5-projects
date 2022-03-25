@@ -6,6 +6,21 @@ import { debug } from 'console';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
+const canvasW = new Relative(CANVAS_WIDTH);
+const canvasH = new Relative(CANVAS_HEIGHT);
+
+const objectRadius = canvasW.values[333];
+const objectRelative = new Relative(objectRadius);
+const HIGHLIGHT_RADIUS = objectRelative.values[750];
+const HIGHLIGHT_OFFSET = 0;
+const HIGHLIGHT_LENGTH = Math.PI / 2;
+const HIGHTLIGHT_START = Math.PI + Math.PI / 2 + HIGHLIGHT_OFFSET;
+const HIGHLIGHT_END = HIGHTLIGHT_START + HIGHLIGHT_LENGTH;
+const HIGHLIGHT_WIDTH = objectRelative.values[45];
+const HIGHLIGHT_SATURATION_FACTOR = 0.45;
+const HIGHLIGHT_LIGHTEN_FACTOR = 3;
+
+const BG_SATURATION_FACTOR = 0.3;
 
 const s = (p: p5) => {
     const blendModes = [
@@ -29,9 +44,6 @@ const s = (p: p5) => {
     let seed = 0;
 
     let grid: Grid;
-    let objectRadius: number;
-    let canvasW: Relative;
-    let canvasH: Relative;
 
     const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
     const OBJECT_AMOUNT = PALLETTE.length;
@@ -44,17 +56,15 @@ const s = (p: p5) => {
         canvas.parent('sketch');
         p.noLoop();
 
+        p.colorMode(p.HSB, 360, 100, 100);
         p.textAlign(p.CENTER, p.CENTER);
         p.rectMode(p.CENTER);
         p.ellipseMode(p.CENTER);
         p.strokeCap(p.ROUND);
 
         // VARIABLE INITs
-        canvasW = new Relative(CANVAS_WIDTH);
-        canvasH = new Relative(CANVAS_HEIGHT);
 
         grid = new Grid(3, 3, CANVAS_WIDTH, CANVAS_HEIGHT);
-        objectRadius = canvasW.values[250];
 
         // SAVE SKETCH PROGRESS USING CUSTOM CLIENT
         fileClient = new FileClient(
@@ -68,11 +78,17 @@ const s = (p: p5) => {
         // INIT
         seed = randomInt(0, 1000000);
         p.randomSeed(seed);
-        p.background('black');
 
         centerScale(0.666);
 
         // grid.draw((point) => p.circle(point.x, point.y, canvasW.values[250]));
+
+        // pick bg color
+        const bgColor = saturate(p.random(PALLETTE), BG_SATURATION_FACTOR);
+
+        // const bgColor = desaturate(string);
+
+        p.background(bgColor);
 
         // loop for object amount
         let tempPallette = [...PALLETTE];
@@ -91,13 +107,19 @@ const s = (p: p5) => {
             // chance to draw a pill
             if (chance(0.5)) {
                 const [toPoint, newerPoints] = popRandom(newPoints);
-                p.line(point.x, point.y, toPoint.x, toPoint.y);
-
+                pill(point.x, point.y, toPoint.x, toPoint.y);
                 tempPoints = newerPoints;
             } else {
                 // draw a circle
                 p.noStroke();
                 p.circle(point.x, point.y, objectRadius);
+                arc(
+                    point.x,
+                    point.y,
+                    HIGHLIGHT_RADIUS,
+                    HIGHLIGHT_WIDTH,
+                    saturate(brighten(color, HIGHLIGHT_LIGHTEN_FACTOR), HIGHLIGHT_SATURATION_FACTOR),
+                );
             }
         }
 
@@ -110,9 +132,24 @@ const s = (p: p5) => {
         p.redraw();
     };
 
-    // draw a pill (fromX, fromY, toX, toY)
+    // draw a pill (fromX, fromY, toX, toY, highlight? : string)
+    const pill = (fromX: number, fromY: number, toX: number, toY: number, highlight?: string) => {
+        p.line(fromX, fromY, toX, toY);
+    };
 
-    // popRandom(array: T[]): [T[], T]
+    const arc = (x: number, y: number, radius: number, width: number, color: string): void => {
+        p.push();
+        p.noFill();
+        p.stroke(color);
+        p.strokeWeight(width);
+
+        p.arc(x, y, radius, radius, HIGHTLIGHT_START, HIGHLIGHT_END);
+        // fake stroke caps
+        p.fill(color);
+        p.noStroke();
+
+        p.pop();
+    };
 
     function popRandom<T>(array: T[]): [T, T[]] {
         const index = randomInt(0, array.length - 1);
@@ -120,6 +157,24 @@ const s = (p: p5) => {
         array.splice(index, 1);
         return [value, [...array]];
     }
+
+    const saturate = (colorString: string, amount: number): string => {
+        const hue = p.hue(colorString);
+        const saturation = p.saturation(colorString);
+        const brightness = p.brightness(colorString);
+
+        const newColor = p.color(hue, saturation * amount, brightness);
+        return newColor.toString();
+    };
+
+    const brighten = (colorString: string, amount: number): string => {
+        const hue = p.hue(colorString);
+        const saturation = p.saturation(colorString);
+        const brightness = p.brightness(colorString);
+
+        const newColor = p.color(hue, saturation, brightness * amount);
+        return newColor.toString();
+    };
 
     const selectRandom =
         (chance: number): Condition =>
