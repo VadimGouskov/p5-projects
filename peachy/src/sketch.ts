@@ -9,6 +9,9 @@ const CANVAS_HEIGHT = 1000;
 const canvasW = new Relative(CANVAS_WIDTH);
 const canvasH = new Relative(CANVAS_HEIGHT);
 
+const COLS = 5;
+const ROWS = 5;
+
 const objectRadius = canvasW.values[333];
 const objectRelative = new Relative(objectRadius);
 const HIGHLIGHT_RADIUS = objectRelative.values[750];
@@ -64,7 +67,7 @@ const s = (p: p5) => {
 
         // VARIABLE INITs
 
-        grid = new Grid(3, 3, CANVAS_WIDTH, CANVAS_HEIGHT);
+        grid = new Grid(COLS, ROWS, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         // SAVE SKETCH PROGRESS USING CUSTOM CLIENT
         fileClient = new FileClient(
@@ -94,7 +97,7 @@ const s = (p: p5) => {
         let tempPallette = [...PALLETTE];
         let tempPoints = grid.copy().getFlat();
         for (let i = 0; i < OBJECT_AMOUNT; i++) {
-            let [color, newPallette] = popRandom(tempPallette);
+            const [color, newPallette] = popRandom(tempPallette);
             const [point, newPoints] = popRandom(tempPoints);
 
             tempPallette = newPallette;
