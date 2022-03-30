@@ -9,10 +9,10 @@ const CANVAS_HEIGHT = 1000;
 const canvasW = new Relative(CANVAS_WIDTH);
 const canvasH = new Relative(CANVAS_HEIGHT);
 
-const COLS = 10;
-const ROWS = 10;
+const COLS = 12;
+const ROWS = COLS;
 
-const objectRadius = canvasW.values[100];
+const objectRadius = canvasW.values[1000] / COLS;
 const objectRelative = new Relative(objectRadius);
 const HIGHLIGHT_RADIUS = objectRelative.values[750];
 const HIGHLIGHT_OFFSET = 0;
@@ -25,7 +25,11 @@ const HIGHLIGHT_LIGHTEN_FACTOR = 3;
 
 const BG_SATURATION_FACTOR = 0.3;
 
-const MAX_PILL_DISTANCE = canvasW.values[150];
+const MAX_PILL_DISTANCE = objectRadius * 3;
+
+const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
+//const OBJECT_AMOUNT = PALLETTE.length;
+const OBJECT_AMOUNT = COLS * 2;
 
 const s = (p: p5) => {
     const blendModes = [
@@ -49,9 +53,6 @@ const s = (p: p5) => {
     let seed = 0;
 
     let grid: Grid;
-
-    const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
-    const OBJECT_AMOUNT = PALLETTE.length;
 
     // p.preload = () => {};
 
@@ -96,13 +97,14 @@ const s = (p: p5) => {
         p.background(bgColor);
 
         // loop for object amount
-        let tempPallette = [...PALLETTE];
+        const tempPallette = [...PALLETTE];
         let tempPoints = grid.copy().getFlat();
         for (let i = 0; i < OBJECT_AMOUNT; i++) {
-            const [color, newPallette] = popRandom(tempPallette);
+            // const [color, newPallette] = popRandom(tempPallette);
+            const color = p.random(PALLETTE);
             const [point, newPoints] = popRandom(tempPoints);
 
-            tempPallette = newPallette;
+            // tempPallette = newPallette;
             tempPoints = newPoints;
 
             p.fill(color);
