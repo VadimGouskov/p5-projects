@@ -9,10 +9,10 @@ const CANVAS_HEIGHT = 1000;
 const canvasW = new Relative(CANVAS_WIDTH);
 const canvasH = new Relative(CANVAS_HEIGHT);
 
-const COLS = 5;
-const ROWS = 5;
+const COLS = 10;
+const ROWS = 10;
 
-const objectRadius = canvasW.values[333];
+const objectRadius = canvasW.values[100];
 const objectRelative = new Relative(objectRadius);
 const HIGHLIGHT_RADIUS = objectRelative.values[750];
 const HIGHLIGHT_OFFSET = 0;
@@ -24,6 +24,8 @@ const HIGHLIGHT_SATURATION_FACTOR = 0.45;
 const HIGHLIGHT_LIGHTEN_FACTOR = 3;
 
 const BG_SATURATION_FACTOR = 0.3;
+
+const MAX_PILL_DISTANCE = canvasW.values[150];
 
 const s = (p: p5) => {
     const blendModes = [
@@ -107,22 +109,29 @@ const s = (p: p5) => {
             p.stroke(color);
             p.strokeWeight(objectRadius);
 
-            // chance to draw a pill
-            if (chance(0.5)) {
-                const [toPoint, newerPoints] = popRandom(newPoints);
-                pill(point.x, point.y, toPoint.x, toPoint.y);
-                tempPoints = newerPoints;
-            } else {
-                // draw a circle
-                p.noStroke();
-                p.circle(point.x, point.y, objectRadius);
-                arc(
-                    point.x,
-                    point.y,
-                    HIGHLIGHT_RADIUS,
-                    HIGHLIGHT_WIDTH,
-                    saturate(brighten(color, HIGHLIGHT_LIGHTEN_FACTOR), HIGHLIGHT_SATURATION_FACTOR),
-                );
+            try {
+                // chance to draw a pill
+                if (chance(0.5)) {
+                    // Check if there are still points close enought to form a pill
+                    // TODO If nothing around => draw a highlight dot
+                    const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(
+                        point,
+                        newPoints,
+                        MAX_PILL_DISTANCE,
+                    );
+                    if (!pointWithinRadius) {
+                        console.log('TOO FAR');
+                        shinyDot(point.x, point.y, objectRadius, color);
+                        continue;
+                    }
+                    pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y);
+
+                    tempPoints = remainingPoints;
+                } else {
+                    shinyDot(point.x, point.y, objectRadius, color);
+                }
+            } catch {
+                debugger;
             }
         }
 
@@ -135,9 +144,21 @@ const s = (p: p5) => {
         p.redraw();
     };
 
-    // draw a pill (fromX, fromY, toX, toY, highlight? : string)
     const pill = (fromX: number, fromY: number, toX: number, toY: number, highlight?: string) => {
         p.line(fromX, fromY, toX, toY);
+    };
+
+    const shinyDot = (x: number, y: number, radius: number, color: string) => {
+        // draw a circle
+        p.noStroke();
+        p.circle(x, y, objectRadius);
+        arc(
+            x,
+            y,
+            HIGHLIGHT_RADIUS,
+            HIGHLIGHT_WIDTH,
+            saturate(brighten(color, HIGHLIGHT_LIGHTEN_FACTOR), HIGHLIGHT_SATURATION_FACTOR),
+        );
     };
 
     const arc = (x: number, y: number, radius: number, width: number, color: string): void => {
@@ -177,6 +198,29 @@ const s = (p: p5) => {
 
         const newColor = p.color(hue, saturation, brightness * amount);
         return newColor.toString();
+    };
+
+    const popRandomWithinRadius = (
+        referencePoint: GridPoint,
+        pointArray: GridPoint[],
+        radius: number,
+    ): [GridPoint | undefined, GridPoint[]] => {
+        function isWithinRadius(currentPoint: GridPoint): boolean {
+            const distance = Math.hypot(referencePoint.x - currentPoint.x, referencePoint.y - currentPoint.y);
+            return distance < radius;
+        }
+
+        // TODO quick n dirty solution => try to loop one time over all instead
+        const pointsOutsideRadius = pointArray.filter((point) => !isWithinRadius(point));
+        const pointsWithinRadius = pointArray.filter(isWithinRadius);
+
+        if (pointsWithinRadius.length > 0) {
+            const [selectedPoint, remainingPointsWithinRadius] = popRandom(pointsWithinRadius);
+            return [selectedPoint, [...pointsOutsideRadius, ...remainingPointsWithinRadius]];
+        }
+
+        // no points within radius found
+        return [undefined, pointArray];
     };
 
     const selectRandom =
