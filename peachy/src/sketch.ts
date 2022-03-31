@@ -3,18 +3,20 @@ import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from
 import { FileClient, getCanvasImage } from 'p5-file-client';
 import { Relative } from './relative';
 import { debug } from 'console';
+import { brighten, centerScale, chance, popRandom, randomInt, saturate } from './helpers';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
 const canvasW = new Relative(CANVAS_WIDTH);
 const canvasH = new Relative(CANVAS_HEIGHT);
 
-const COLS = 12;
+const COLS = 10;
 const ROWS = COLS;
 
-const objectRadius = canvasW.values[1000] / COLS;
-const objectRelative = new Relative(objectRadius);
-const HIGHLIGHT_RADIUS = objectRelative.values[750];
+const OBJECT_RADIUS_MAX = canvasW.values[1000] / COLS;
+const OBJECT_RADIUS_MIN = OBJECT_RADIUS_MAX / 3;
+const objectRelative = new Relative(OBJECT_RADIUS_MAX);
+const HIGHLIGHT_RADIUS_FACTOR = 0.75;
 const HIGHLIGHT_OFFSET = 0;
 const HIGHLIGHT_LENGTH = Math.PI / 2;
 const HIGHTLIGHT_START = Math.PI + Math.PI / 2 + HIGHLIGHT_OFFSET;
@@ -25,11 +27,14 @@ const HIGHLIGHT_LIGHTEN_FACTOR = 3;
 
 const BG_SATURATION_FACTOR = 0.3;
 
-const MAX_PILL_DISTANCE = objectRadius * 3;
+const MAX_PILL_DISTANCE = OBJECT_RADIUS_MAX * 2.5;
+const PILL_CHANCE = 0.2;
 
 const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
 //const OBJECT_AMOUNT = PALLETTE.length;
-const OBJECT_AMOUNT = COLS * 2;
+const OBJECT_AMOUNT = COLS * 7;
+
+export let p5Instance: p5;
 
 const s = (p: p5) => {
     const blendModes = [
@@ -47,6 +52,8 @@ const s = (p: p5) => {
         p.BURN,
         p.SUBTRACT,
     ];
+
+    p5Instance = p;
 
     let fileClient: FileClient;
     const sketchName = 'peachy';
@@ -85,7 +92,7 @@ const s = (p: p5) => {
         seed = randomInt(0, 1000000);
         p.randomSeed(seed);
 
-        centerScale(0.666);
+        centerScale(CANVAS_WIDTH, CANVAS_HEIGHT, 0.666);
 
         // grid.draw((point) => p.circle(point.x, point.y, canvasW.values[250]));
 
@@ -109,25 +116,23 @@ const s = (p: p5) => {
 
             p.fill(color);
             p.stroke(color);
-            p.strokeWeight(objectRadius);
 
+            const pillDistance = (point.x / CANVAS_WIDTH) * MAX_PILL_DISTANCE;
+            const objectRadius = p.lerp(OBJECT_RADIUS_MIN, OBJECT_RADIUS_MAX, point.x / CANVAS_WIDTH);
+
+            p.strokeWeight(objectRadius);
             try {
                 // chance to draw a pill
-                if (chance(0.5)) {
+                if (chance(PILL_CHANCE)) {
                     // Check if there are still points close enought to form a pill
-                    // TODO If nothing around => draw a highlight dot
-                    const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(
-                        point,
-                        newPoints,
-                        MAX_PILL_DISTANCE,
-                    );
+                    // TODO If nothing around => draw a dot
+                    const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(point, newPoints, pillDistance);
                     if (!pointWithinRadius) {
                         console.log('TOO FAR');
                         shinyDot(point.x, point.y, objectRadius, color);
                         continue;
                     }
                     pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y);
-
                     tempPoints = remainingPoints;
                 } else {
                     shinyDot(point.x, point.y, objectRadius, color);
@@ -153,11 +158,11 @@ const s = (p: p5) => {
     const shinyDot = (x: number, y: number, radius: number, color: string) => {
         // draw a circle
         p.noStroke();
-        p.circle(x, y, objectRadius);
+        p.circle(x, y, radius);
         arc(
             x,
             y,
-            HIGHLIGHT_RADIUS,
+            radius * HIGHLIGHT_RADIUS_FACTOR,
             HIGHLIGHT_WIDTH,
             saturate(brighten(color, HIGHLIGHT_LIGHTEN_FACTOR), HIGHLIGHT_SATURATION_FACTOR),
         );
@@ -175,31 +180,6 @@ const s = (p: p5) => {
         p.noStroke();
 
         p.pop();
-    };
-
-    function popRandom<T>(array: T[]): [T, T[]] {
-        const index = randomInt(0, array.length - 1);
-        const value = array[index];
-        array.splice(index, 1);
-        return [value, [...array]];
-    }
-
-    const saturate = (colorString: string, amount: number): string => {
-        const hue = p.hue(colorString);
-        const saturation = p.saturation(colorString);
-        const brightness = p.brightness(colorString);
-
-        const newColor = p.color(hue, saturation * amount, brightness);
-        return newColor.toString();
-    };
-
-    const brighten = (colorString: string, amount: number): string => {
-        const hue = p.hue(colorString);
-        const saturation = p.saturation(colorString);
-        const brightness = p.brightness(colorString);
-
-        const newColor = p.color(hue, saturation, brightness * amount);
-        return newColor.toString();
     };
 
     const popRandomWithinRadius = (
@@ -230,18 +210,6 @@ const s = (p: p5) => {
         (point: GridPoint, col?: number, row?: number) => {
             return p.random() < chance;
         };
-
-    const randomInt = (min: number, max: number): number => Math.floor(p.random(min, max + 1));
-
-    const chance = (amount: number) => {
-        return p.random() < amount;
-    };
-
-    const centerScale = (value: number) => {
-        p.translate(canvasW.values[500], canvasW.values[500]);
-        p.scale(value);
-        p.translate(-canvasW.values[500], -canvasW.values[500]);
-    };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
