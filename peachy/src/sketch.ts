@@ -1,5 +1,5 @@
 import p5 from 'p5';
-import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
+import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint, GridShape } from 'pretty-grid';
 import { FileClient, getCanvasImage } from 'p5-file-client';
 import { Relative } from './relative';
 import { debug } from 'console';
@@ -29,6 +29,8 @@ const BG_SATURATION_FACTOR = 0.3;
 
 const MAX_PILL_DISTANCE = OBJECT_RADIUS_MAX * 2.5;
 const PILL_CHANCE = 0.2;
+
+const DECORATION_BASE_CHANCE = 0.5;
 
 const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
 //const OBJECT_AMOUNT = PALLETTE.length;
@@ -98,9 +100,7 @@ const s = (p: p5) => {
 
         // pick bg color
         const bgColor = saturate(p.random(PALLETTE), BG_SATURATION_FACTOR);
-
         // const bgColor = desaturate(string);
-
         p.background(bgColor);
 
         // loop for object amount
@@ -119,6 +119,7 @@ const s = (p: p5) => {
 
             const pillDistance = (point.x / CANVAS_WIDTH) * MAX_PILL_DISTANCE;
             const objectRadius = p.lerp(OBJECT_RADIUS_MIN, OBJECT_RADIUS_MAX, point.x / CANVAS_WIDTH);
+            const decorationChance = DECORATION_BASE_CHANCE - point.x / CANVAS_WIDTH;
 
             p.strokeWeight(objectRadius);
             try {
@@ -128,14 +129,17 @@ const s = (p: p5) => {
                     // TODO If nothing around => draw a dot
                     const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(point, newPoints, pillDistance);
                     if (!pointWithinRadius) {
-                        console.log('TOO FAR');
-                        shinyDot(point.x, point.y, objectRadius, color);
+                        chance(decorationChance)
+                            ? decoratedDot(point.x, point.y, objectRadius, color)
+                            : shinyDot(point.x, point.y, objectRadius, color);
                         continue;
                     }
                     pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y);
                     tempPoints = remainingPoints;
                 } else {
-                    shinyDot(point.x, point.y, objectRadius, color);
+                    chance(decorationChance)
+                        ? decoratedDot(point.x, point.y, objectRadius, color)
+                        : shinyDot(point.x, point.y, objectRadius, color);
                 }
             } catch {
                 debugger;
@@ -155,6 +159,26 @@ const s = (p: p5) => {
         p.line(fromX, fromY, toX, toY);
     };
 
+    const decoratedDot = (x: number, y: number, radius: number, color: string) => {
+        const decorationWidth = objectRelative.values[75];
+
+        // ELLIPSE GRID
+        const ellipseGrid = new Grid(9, 1, OBJECT_RADIUS_MAX, OBJECT_RADIUS_MAX, GridShape.ELLIPSE);
+        ellipseGrid.translate(x, y);
+        p.noStroke();
+        ellipseGrid.draw((point) => p.circle(point.x, point.y, decorationWidth));
+        // ARC
+        const arcStep = p.QUARTER_PI;
+        const arcOffset = randomInt(0, p.TWO_PI / arcStep) * arcStep;
+        const arcLength = randomInt(0, p.TWO_PI / arcStep) * arcStep;
+        const arcStart = arcOffset;
+        const arcStop = arcOffset + arcLength;
+
+        arc(x, y, OBJECT_RADIUS_MAX, decorationWidth, arcStart, arcStop, color);
+
+        shinyDot(x, y, radius, color);
+    };
+
     const shinyDot = (x: number, y: number, radius: number, color: string) => {
         // draw a circle
         p.noStroke();
@@ -164,17 +188,27 @@ const s = (p: p5) => {
             y,
             radius * HIGHLIGHT_RADIUS_FACTOR,
             HIGHLIGHT_WIDTH,
+            HIGHTLIGHT_START,
+            HIGHLIGHT_END,
             saturate(brighten(color, HIGHLIGHT_LIGHTEN_FACTOR), HIGHLIGHT_SATURATION_FACTOR),
         );
     };
 
-    const arc = (x: number, y: number, radius: number, width: number, color: string): void => {
+    const arc = (
+        x: number,
+        y: number,
+        radius: number,
+        width: number,
+        start: number,
+        stop: number,
+        color: string,
+    ): void => {
         p.push();
         p.noFill();
         p.stroke(color);
         p.strokeWeight(width);
 
-        p.arc(x, y, radius, radius, HIGHTLIGHT_START, HIGHLIGHT_END);
+        p.arc(x, y, radius, radius, start, stop);
         // fake stroke caps
         p.fill(color);
         p.noStroke();
