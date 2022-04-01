@@ -1,9 +1,8 @@
 import p5 from 'p5';
-import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint, GridShape } from 'pretty-grid';
+import { Condition, Grid, GridPoint, GridShape } from 'pretty-grid';
 import { FileClient, getCanvasImage } from 'p5-file-client';
 import { Relative } from './relative';
-import { debug } from 'console';
-import { brighten, centerScale, chance, popRandom, randomInt, saturate } from './helpers';
+import { brighten, centerScale, chance, popRandom, randomInt, saturate, sortCloser } from './helpers';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
@@ -26,9 +25,10 @@ const HIGHLIGHT_SATURATION_FACTOR = 0.45;
 const HIGHLIGHT_LIGHTEN_FACTOR = 3;
 
 const BG_SATURATION_FACTOR = 0.3;
+const BG_GRADIENT_BRIGHTNESS = 0.75;
 
-const MAX_PILL_DISTANCE = OBJECT_RADIUS_MAX * 2.5;
-const PILL_CHANCE = 0.2;
+const MAX_PILL_DISTANCE = OBJECT_RADIUS_MAX * 1.8;
+const PILL_CHANCE = 0.25;
 
 const DECORATION_BASE_CHANCE = 0.5;
 
@@ -37,24 +37,9 @@ const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
 const OBJECT_AMOUNT = COLS * 7;
 
 export let p5Instance: p5;
+let drawingContext: CanvasRenderingContext2D;
 
 const s = (p: p5) => {
-    const blendModes = [
-        p.ADD,
-        p.DARKEST,
-        p.LIGHTEST,
-        p.EXCLUSION,
-        p.MULTIPLY,
-        p.SCREEN,
-        p.REPLACE,
-        p.OVERLAY,
-        p.HARD_LIGHT,
-        p.SOFT_LIGHT,
-        p.DODGE,
-        p.BURN,
-        p.SUBTRACT,
-    ];
-
     p5Instance = p;
 
     let fileClient: FileClient;
@@ -78,8 +63,8 @@ const s = (p: p5) => {
         p.strokeCap(p.ROUND);
 
         // VARIABLE INITs
-
         grid = new Grid(COLS, ROWS, CANVAS_WIDTH, CANVAS_HEIGHT);
+        drawingContext = p.drawingContext.canvas.getContext('2d') as CanvasRenderingContext2D;
 
         // SAVE SKETCH PROGRESS USING CUSTOM CLIENT
         fileClient = new FileClient(
@@ -94,14 +79,18 @@ const s = (p: p5) => {
         seed = randomInt(0, 1000000);
         p.randomSeed(seed);
 
-        centerScale(CANVAS_WIDTH, CANVAS_HEIGHT, 0.666);
-
-        // grid.draw((point) => p.circle(point.x, point.y, canvasW.values[250]));
-
         // pick bg color
         const bgColor = saturate(p.random(PALLETTE), BG_SATURATION_FACTOR);
         // const bgColor = desaturate(string);
-        p.background(bgColor);
+        //p.background(bgColor);
+        backgroundGradient([
+            brighten(bgColor, BG_GRADIENT_BRIGHTNESS),
+            brighten(bgColor, 1 + 1 - BG_GRADIENT_BRIGHTNESS),
+        ]);
+
+        centerScale(CANVAS_WIDTH, CANVAS_HEIGHT, 0.666);
+
+        // grid.draw((point) => p.circle(point.x, point.y, canvasW.values[250]));
 
         // loop for object amount
         const tempPallette = [...PALLETTE];
@@ -121,7 +110,6 @@ const s = (p: p5) => {
             const objectRadius = p.lerp(OBJECT_RADIUS_MIN, OBJECT_RADIUS_MAX, point.x / CANVAS_WIDTH);
             const decorationChance = DECORATION_BASE_CHANCE - point.x / CANVAS_WIDTH;
 
-            p.strokeWeight(objectRadius);
             try {
                 // chance to draw a pill
                 if (chance(PILL_CHANCE)) {
@@ -134,7 +122,7 @@ const s = (p: p5) => {
                             : shinyDot(point.x, point.y, objectRadius, color);
                         continue;
                     }
-                    pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y);
+                    pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y, objectRadius, color);
                     tempPoints = remainingPoints;
                 } else {
                     chance(decorationChance)
@@ -155,7 +143,13 @@ const s = (p: p5) => {
         p.redraw();
     };
 
-    const pill = (fromX: number, fromY: number, toX: number, toY: number, highlight?: string) => {
+    const pill = (fromX: number, fromY: number, toX: number, toY: number, width: number, color: string) => {
+        p.strokeWeight(width);
+
+        // sort coordinates closest to bottom left to not squash the gradient
+        const [x0, y0, x1, y1] = sortCloser(0, 0, fromX, fromY, toX, toY);
+        gradientStroke(x0 - width / 2, y0 + width / 2, x1 + width / 2, y1 - width / 2, [p.random(PALLETTE), color]);
+
         p.line(fromX, fromY, toX, toY);
     };
 
@@ -173,7 +167,6 @@ const s = (p: p5) => {
         const arcLength = randomInt(0, p.TWO_PI / arcStep) * arcStep;
         const arcStart = arcOffset;
         const arcStop = arcOffset + arcLength;
-
         arc(x, y, OBJECT_RADIUS_MAX, decorationWidth, arcStart, arcStop, color);
 
         shinyDot(x, y, radius, color);
@@ -181,8 +174,12 @@ const s = (p: p5) => {
 
     const shinyDot = (x: number, y: number, radius: number, color: string) => {
         // draw a circle
+        gradientFill(x - radius / 2, y + radius / 2, x + radius / 2, y - radius / 2, [p.random(PALLETTE), color]);
+
         p.noStroke();
+
         p.circle(x, y, radius);
+
         arc(
             x,
             y,
@@ -244,6 +241,37 @@ const s = (p: p5) => {
         (point: GridPoint, col?: number, row?: number) => {
             return p.random() < chance;
         };
+
+    const createLinearGradient = (
+        x0: number,
+        y0: number,
+        x1: number,
+        y1: number,
+        colorStops: string[],
+    ): CanvasGradient => {
+        const gradient = drawingContext.createLinearGradient(x0, y0, x1, y1);
+        colorStops.forEach((color, index) => gradient.addColorStop(index, color));
+        return gradient;
+    };
+
+    const gradientFill = (x0: number, y0: number, x1: number, y1: number, colorStops: string[]) => {
+        const gradient = createLinearGradient(x0, y0, x1, y1, colorStops);
+        drawingContext.fillStyle = gradient;
+    };
+
+    const gradientStroke = (x0: number, y0: number, x1: number, y1: number, colorStops: string[]) => {
+        const gradient = createLinearGradient(x0, y0, x1, y1, colorStops);
+        drawingContext.strokeStyle = gradient;
+    };
+
+    const backgroundGradient = (colorStops: string[]) => {
+        p.push();
+        gradientFill(0, p.height, p.width, 0, colorStops);
+        p.rectMode(p.CORNER);
+        p.noStroke();
+        p.rect(0, 0, p.width, p.height);
+        p.pop();
+    };
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
