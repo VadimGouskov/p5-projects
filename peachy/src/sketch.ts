@@ -2,18 +2,19 @@ import p5 from 'p5';
 import { Condition, Grid, GridPoint, GridShape } from 'pretty-grid';
 import { FileClient, getCanvasImage } from 'p5-file-client';
 import { Relative } from './relative';
-import { brighten, centerScale, chance, popRandom, randomInt, saturate, sortCloser } from './helpers';
+import { brighten, centerScale, chance, dash, popRandom, randomInt, saturate, sortCloser } from './helpers';
 
 const CANVAS_WIDTH = 1000;
-const CANVAS_HEIGHT = 1000;
+const CANVAS_HEIGHT = CANVAS_WIDTH * 1.6666;
 const canvasW = new Relative(CANVAS_WIDTH);
 const canvasH = new Relative(CANVAS_HEIGHT);
+const PATTERN_SCALE = 0.75;
 
-const COLS = 10;
-const ROWS = COLS;
+const COLS = 20;
+const ROWS = Math.floor(COLS * 1.666);
 
 const OBJECT_RADIUS_MAX = canvasW.values[1000] / COLS;
-const OBJECT_RADIUS_MIN = OBJECT_RADIUS_MAX / 3;
+const OBJECT_RADIUS_MIN = OBJECT_RADIUS_MAX / 2;
 const objectRelative = new Relative(OBJECT_RADIUS_MAX);
 const HIGHLIGHT_RADIUS_FACTOR = 0.75;
 const HIGHLIGHT_OFFSET = 0;
@@ -28,13 +29,21 @@ const BG_SATURATION_FACTOR = 0.3;
 const BG_GRADIENT_BRIGHTNESS = 0.75;
 
 const MAX_PILL_DISTANCE = OBJECT_RADIUS_MAX * 1.8;
-const PILL_CHANCE = 0.25;
+const PILL_CHANCE = 0.05;
 
 const DECORATION_BASE_CHANCE = 0.5;
 
-const PALLETTE = ['#423E3B', '#FF2E00', '#FEA82F', '#FFFECB', '#5448C8'];
+const BG_CHANCE = 0.9;
+const BG_PATTERN_COLOR = '#666';
+const DASH_AMOUNT = 50;
+const DASH_WIDTH = CANVAS_WIDTH / DASH_AMOUNT;
+const DASH_HEIGHT = CANVAS_HEIGHT / DASH_AMOUNT;
+const DASH_CHANCE = 0.9;
+
+const PALLETTE = ['#FF2E00', '#FEA82F', '#FFFECB', '#5448C8', '#423E3B' /*'#718F94'*/];
+const BG_COLOR = PALLETTE[3];
 //const OBJECT_AMOUNT = PALLETTE.length;
-const OBJECT_AMOUNT = COLS * 7;
+const OBJECT_AMOUNT = COLS * 9;
 
 export let p5Instance: p5;
 let drawingContext: CanvasRenderingContext2D;
@@ -48,7 +57,11 @@ const s = (p: p5) => {
 
     let grid: Grid;
 
-    // p.preload = () => {};
+    let font: any;
+
+    p.preload = () => {
+        font = p.loadFont('http://localhost:3000/FredokaOne-Regular.ttf');
+    };
 
     p.setup = () => {
         // BASIC SETUP
@@ -77,18 +90,15 @@ const s = (p: p5) => {
     p.draw = () => {
         // INIT
         seed = randomInt(0, 1000000);
+        seed = 335842;
         p.randomSeed(seed);
-
+        console.log(seed);
         // pick bg color
-        const bgColor = saturate(p.random(PALLETTE), BG_SATURATION_FACTOR);
-        // const bgColor = desaturate(string);
-        //p.background(bgColor);
-        backgroundGradient([
-            brighten(bgColor, BG_GRADIENT_BRIGHTNESS),
-            brighten(bgColor, 1 + 1 - BG_GRADIENT_BRIGHTNESS),
-        ]);
+        const bgColor = saturate(BG_COLOR, BG_SATURATION_FACTOR);
+        backgroundGradient([brighten(bgColor, BG_GRADIENT_BRIGHTNESS), brighten(bgColor, 2 - BG_GRADIENT_BRIGHTNESS)]);
+        foreGround();
 
-        centerScale(CANVAS_WIDTH, CANVAS_HEIGHT, 0.666);
+        centerScale(CANVAS_WIDTH, CANVAS_HEIGHT, PATTERN_SCALE);
 
         // grid.draw((point) => p.circle(point.x, point.y, canvasW.values[250]));
 
@@ -106,34 +116,35 @@ const s = (p: p5) => {
             p.fill(color);
             p.stroke(color);
 
-            const pillDistance = (point.x / CANVAS_WIDTH) * MAX_PILL_DISTANCE;
-            const objectRadius = p.lerp(OBJECT_RADIUS_MIN, OBJECT_RADIUS_MAX, point.x / CANVAS_WIDTH);
-            const decorationChance = DECORATION_BASE_CHANCE - point.x / CANVAS_WIDTH;
+            const pillDistance = backgroundPattern(point.x / CANVAS_WIDTH) * MAX_PILL_DISTANCE;
+            const objectRadius = p.lerp(
+                OBJECT_RADIUS_MIN,
+                OBJECT_RADIUS_MAX,
+                backgroundPattern(point.x / CANVAS_WIDTH),
+            );
+            const decorationChance = DECORATION_BASE_CHANCE - backgroundPattern(point.x / CANVAS_WIDTH);
 
-            try {
-                // chance to draw a pill
-                if (chance(PILL_CHANCE)) {
-                    // Check if there are still points close enought to form a pill
-                    // TODO If nothing around => draw a dot
-                    const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(point, newPoints, pillDistance);
-                    if (!pointWithinRadius) {
-                        chance(decorationChance)
-                            ? decoratedDot(point.x, point.y, objectRadius, color)
-                            : shinyDot(point.x, point.y, objectRadius, color);
-                        continue;
-                    }
-                    pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y, objectRadius, color);
-                    tempPoints = remainingPoints;
-                } else {
+            // chance to draw a pill
+            if (chance(PILL_CHANCE)) {
+                // Check if there are still points close enought to form a pill
+                // TODO If nothing around => draw a dot
+                const [pointWithinRadius, remainingPoints] = popRandomWithinRadius(point, newPoints, pillDistance);
+                if (!pointWithinRadius) {
                     chance(decorationChance)
                         ? decoratedDot(point.x, point.y, objectRadius, color)
                         : shinyDot(point.x, point.y, objectRadius, color);
+                    continue;
                 }
-            } catch {
-                debugger;
+                pill(point.x, point.y, pointWithinRadius.x, pointWithinRadius.y, objectRadius, color);
+                tempPoints = remainingPoints;
+            } else {
+                chance(decorationChance)
+                    ? decoratedDot(point.x, point.y, objectRadius, color)
+                    : shinyDot(point.x, point.y, objectRadius, color);
             }
         }
 
+        // titleText();
         // EXPORT
         const image64 = getCanvasImage('sketch');
         fileClient.exportImage64(image64, '.png', `${sketchName}_${seed}`);
@@ -148,7 +159,9 @@ const s = (p: p5) => {
 
         // sort coordinates closest to bottom left to not squash the gradient
         const [x0, y0, x1, y1] = sortCloser(0, 0, fromX, fromY, toX, toY);
-        gradientStroke(x0 - width / 2, y0 + width / 2, x1 + width / 2, y1 - width / 2, [p.random(PALLETTE), color]);
+
+        const complimentaryColor = p.random(PALLETTE.filter((c) => c != color));
+        gradientStroke(x0 - width / 2, y0 + width / 2, x1 + width / 2, y1 - width / 2, [color, complimentaryColor]);
 
         p.line(fromX, fromY, toX, toY);
     };
@@ -174,7 +187,8 @@ const s = (p: p5) => {
 
     const shinyDot = (x: number, y: number, radius: number, color: string) => {
         // draw a circle
-        gradientFill(x - radius / 2, y + radius / 2, x + radius / 2, y - radius / 2, [p.random(PALLETTE), color]);
+        const complimentaryColor = p.random(PALLETTE.filter((c) => c != color));
+        gradientFill(x - radius / 2, y + radius / 2, x + radius / 2, y - radius / 2, [complimentaryColor, color]);
 
         p.noStroke();
 
@@ -271,6 +285,51 @@ const s = (p: p5) => {
         p.noStroke();
         p.rect(0, 0, p.width, p.height);
         p.pop();
+    };
+
+    const foreGround = () => {
+        p.push();
+        p.blendMode(p.OVERLAY);
+
+        p.noFill();
+        const fgGrid = new Grid(DASH_AMOUNT, DASH_AMOUNT * 1.666, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        fgGrid.draw((point) => {
+            chance(DASH_CHANCE) ? drawDash(point.x, point.y) : drawCircle(point.x, point.y);
+        }, selectRandom(BG_CHANCE));
+        p.pop();
+    };
+
+    const drawDash = (x: number, y: number) => {
+        // DASHES
+        p.stroke(BG_PATTERN_COLOR);
+        p.strokeWeight(objectRelative.values[10]);
+        dash(x, y, DASH_WIDTH, DASH_HEIGHT);
+    };
+
+    const drawCircle = (x: number, y: number) => {
+        p.noStroke();
+        p.fill(BG_PATTERN_COLOR);
+        p.circle(x, y, objectRelative.values[66]);
+    };
+
+    const titleText = () => {
+        p.push();
+        p.blendMode(p.MULTIPLY);
+        p.textSize(canvasW.values[300]);
+        p.textStyle(p.BOLD);
+        p.textFont(font);
+        p.fill(0, 0.1);
+        p.text('DANCE \nPEACHY', canvasW.values[500], canvasH.values[500]);
+        p.pop();
+    };
+
+    const backgroundPattern = (normalizedValue: number): number => {
+        const x = normalizedValue * Math.PI * 2;
+        const offset = Math.PI / 2;
+        const y = Math.sin(x + offset);
+        // normalize output
+        return 1 - (y + 1) / 2;
     };
 };
 

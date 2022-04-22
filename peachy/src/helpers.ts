@@ -50,6 +50,12 @@ export const sortCloser = (
     return dist0 < dist1 ? [x0, y0, x1, y1] : [x1, y1, x0, y0];
 };
 
+export const dash = (x: number, y: number, width: number, height: number): void => {
+    const offsetW = width / 2;
+    const offsetH = width / 2;
+    p.line(x - offsetW, y - offsetH, x + offsetW, y + offsetH);
+};
+
 /*
 export const blendModes = [
     p.ADD,
