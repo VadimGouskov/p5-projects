@@ -1,8 +1,9 @@
 import p5 from 'p5';
 import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
 import { interpolate } from "flubber" // ES6
-import { svgPath } from './helpers/svg-path';
+import { fillPath } from './helpers/svg-path';
 import loadSvgFile from "load-svg-file/dist/load-svg-file.es6"
+import svgpath from 'svgpath';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
@@ -14,7 +15,7 @@ const CURVE = "M10 10 h 80 v 80 h -80 Z"
 const s = (p: p5) => {
     let seed = 0;
     let canvasHandle: HTMLCanvasElement;
-    let svg, targetPath: string;
+    let svg: string;
 
     // p.preload = () => {};
     let interpolator: (input: number) => any;
@@ -27,10 +28,13 @@ const s = (p: p5) => {
           }).then(() => {
             console.log('SVG Loaded successfully')
             const path = document.querySelector(`.${targetName} svg path`)
-            targetPath = (path?.getAttribute("d") || "").replace(/[\r\n]/gm, '');
-            interpolator = interpolate(TRIANGLE, targetPath);
+            let targetPath = path?.getAttribute("d") || "";
+            targetPath = svgpath(targetPath).scale(0.2).toString();
 
-            //console.log(targetPath)
+            // TODO HTML cleanup
+            return targetPath;
+        }).then((path: string) => {
+            interpolator = interpolate(TRIANGLE, path);
         })
     }
 
@@ -43,8 +47,6 @@ const s = (p: p5) => {
         // INIT
         seed = randomInt(0, 1000000);
         p.randomSeed(seed);
-        console.log("targetPath: ", targetPath)
-
     };
 
     p.draw = () => {
@@ -61,9 +63,7 @@ const s = (p: p5) => {
         const newPath = interpolator(p.mouseX / CANVAS_WIDTH);
         const path2D = new Path2D(newPath);
         p.translate(p.width/2, p.height/2)
-        svgPath(canvasHandle, path2D)
-        canvasHandle.getContext("2d")?.fill(path2D);
-        
+        fillPath(canvasHandle, path2D)
 
     };
 

@@ -31,9 +31,12 @@
   },
   "dependencies": {
     "flubber": "^0.4.2",
+    "install": "^0.13.0",
     "load-svg-file": "^1.0.8",
+    "npm": "^8.19.2",
     "p5": "^1.4.0",
     "pretty-grid": "0.0.10",
+    "svgpath": "^2.5.0",
     "ts-loader": "^9.2.5"
   }
 }
