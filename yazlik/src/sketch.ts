@@ -1,9 +1,10 @@
 import p5 from 'p5';
 import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
 import { interpolate } from "flubber" // ES6
-import { fillPath } from './helpers/svg-path';
+import { fillPath } from './helpers/fill-path';
 import loadSvgFile from "load-svg-file/dist/load-svg-file.es6"
 import svgpath from 'svgpath';
+import { loadSvgPath } from './helpers/load-svg-path';
 
 const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = 1000;
@@ -21,21 +22,12 @@ const s = (p: p5) => {
     let interpolator: (input: number) => any;
 
      p.preload = () => {
-        const targetName = "svg-target";
-        const svgSrc = "bird.svg"
-        svg = loadSvgFile(`public/${svgSrc}`, {
-            class: 'svg-target', 
-          }).then(() => {
-            console.log('SVG Loaded successfully')
-            const path = document.querySelector(`.${targetName} svg path`)
-            let targetPath = path?.getAttribute("d") || "";
-            targetPath = svgpath(targetPath).scale(0.2).toString();
-
-            // TODO HTML cleanup
-            return targetPath;
-        }).then((path: string) => {
-            interpolator = interpolate(TRIANGLE, path);
-        })
+        const initSvgs = async () => {
+            const birdPath = await loadSvgPath("public/bird.svg", 200, 200);
+            const fishPath = await loadSvgPath("public/fish.svg", 200, 200);
+            interpolator = interpolate(fishPath, birdPath);
+        }
+        initSvgs();
     }
 
     p.setup = () => {
@@ -56,14 +48,13 @@ const s = (p: p5) => {
         } 
 
         p.background("blue");
-        p.fill(127);
-        baseGrid.draw(({x, y}) => p.circle(x, y, 20) );
+        p.fill("white");
+        baseGrid.draw(({x, y}) => {p.circle(x, y, 20)} );
 
 
-        const newPath = interpolator(p.mouseX / CANVAS_WIDTH);
-        const path2D = new Path2D(newPath);
+        const interpolatedPath = interpolator(p.mouseX / CANVAS_WIDTH);
         p.translate(p.width/2, p.height/2)
-        fillPath(canvasHandle, path2D)
+        fillPath(canvasHandle, interpolatedPath)
 
     };
 
