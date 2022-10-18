@@ -5,27 +5,34 @@ import { fillPath } from './helpers/fill-path';
 import loadSvgFile from "load-svg-file/dist/load-svg-file.es6"
 import svgpath from 'svgpath';
 import { loadSvgPath } from './helpers/load-svg-path';
+import { centerScale } from './helpers/center-scale';
+import svgPath from 'svgpath';
 
-const CANVAS_WIDTH = 1000;
-const CANVAS_HEIGHT = 1000;
-const baseGrid = new Grid(20, 20 , CANVAS_WIDTH, CANVAS_HEIGHT);
+const CANVAS_WIDTH = 500;
+const CANVAS_HEIGHT = 500;
+const ROWS = 9;
+const COLS = 9;
+const SHAPE_SCALE_X = CANVAS_WIDTH / COLS; 
+const SHAPE_SCALE_Y = CANVAS_HEIGHT / ROWS; 
+const baseGrid = new Grid(COLS, ROWS , CANVAS_WIDTH, CANVAS_HEIGHT);
 
-const TRIANGLE = "M150 0 L75 200 L225 200 Z"
-const CURVE = "M10 10 h 80 v 80 h -80 Z"
 
 const s = (p: p5) => {
     let seed = 0;
     let canvasHandle: HTMLCanvasElement;
-    let svg: string;
 
     // p.preload = () => {};
+    let bird: string, fish: string;
     let interpolator: (input: number) => any;
 
      p.preload = () => {
         const initSvgs = async () => {
-            const birdPath = await loadSvgPath("public/bird.svg", 200, 200);
-            const fishPath = await loadSvgPath("public/fish.svg", 200, 200);
-            interpolator = interpolate(fishPath, birdPath);
+            const birdSvg = await loadSvgPath("public/bird.svg", SHAPE_SCALE_X, SHAPE_SCALE_Y);
+            const fishSvg = await loadSvgPath("public/fish.svg", SHAPE_SCALE_X, SHAPE_SCALE_Y);
+            bird = svgPath(birdSvg).translate(-SHAPE_SCALE_X /2, -SHAPE_SCALE_Y /2).toString();
+            fish = svgPath(fishSvg).translate(-SHAPE_SCALE_X /2, -SHAPE_SCALE_Y /2).toString();
+
+            interpolator = interpolate(bird, fish);
         }
         initSvgs();
     }
@@ -48,15 +55,43 @@ const s = (p: p5) => {
         } 
 
         p.background("blue");
+        
+        centerScale(p, CANVAS_WIDTH, CANVAS_HEIGHT, 0.7);
+
+        // BASE GRID
         p.fill("white");
-        baseGrid.draw(({x, y}) => {p.circle(x, y, 20)} );
+        baseGrid
+        .draw(({x, y}) => {
+            p.push()
+            const morph = y / CANVAS_HEIGHT  ;
+            const interpolatedPath = interpolator(morph);
+            p.translate(x, y)
+            fillPath(canvasHandle, interpolatedPath)
+            p.pop(); 
+        });
 
+        //
 
-        const interpolatedPath = interpolator(p.mouseX / CANVAS_WIDTH);
-        p.translate(p.width/2, p.height/2)
-        fillPath(canvasHandle, interpolatedPath)
+        p.fill("#F00A")
+        for(let i = 0; i < 5 ; i++) {
+            p.push();
+            const scale = 1 + Math.random() * 5;
+            p.scale(scale);
+            p.translate(CANVAS_WIDTH * Math.random() * 0.5, CANVAS_HEIGHT * Math.random() * 0.5 );
+            fillPath(canvasHandle, bird);
+            p.pop();
+        }
 
+        if(!!interpolator) p.noLoop();
+        
     };
+
+    p.keyPressed = () => {
+        if (p.key === "S") {
+            const timestamp = Date.now()
+            p.save(`yazlik_${timestamp}`);
+        }
+    }
 
     p.mouseClicked = () => {
         p.redraw();
