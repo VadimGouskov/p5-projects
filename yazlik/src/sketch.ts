@@ -2,11 +2,11 @@ import p5 from 'p5';
 import { cols, Condition, ConditionCreator, Grid, GridFunction, GridPoint } from 'pretty-grid';
 import { interpolate } from "flubber" // ES6
 import { fillPath } from './helpers/fill-path';
-import loadSvgFile from "load-svg-file/dist/load-svg-file.es6"
-import svgpath from 'svgpath';
 import { loadSvgPath } from './helpers/load-svg-path';
 import { centerScale } from './helpers/center-scale';
 import svgPath from 'svgpath';
+import { strokePath } from './helpers/stroke-path';
+import { settings } from './settings';
 
 const CANVAS_WIDTH = 500;
 const CANVAS_HEIGHT = 500;
@@ -15,6 +15,7 @@ const COLS = 9;
 const SHAPE_SCALE_X = CANVAS_WIDTH / COLS; 
 const SHAPE_SCALE_Y = CANVAS_HEIGHT / ROWS; 
 const baseGrid = new Grid(COLS, ROWS , CANVAS_WIDTH, CANVAS_HEIGHT);
+
 
 
 const s = (p: p5) => {
@@ -64,9 +65,23 @@ const s = (p: p5) => {
         .draw(({x, y}) => {
             p.push()
             const morph = y / CANVAS_HEIGHT  ;
-            const interpolatedPath = interpolator(morph);
+            const mainPath = interpolator(morph);
             p.translate(x, y)
-            fillPath(canvasHandle, interpolatedPath)
+
+            // Primary shape
+            p.fill(settings.colors.primary);
+            fillPath(canvasHandle, mainPath);
+
+            // Ghost stroke
+            p.stroke(settings.colors.secondary);
+            
+            const ghostStroke = svgPath(interpolator(morph + random(-0.1, 0.1)))
+                                        .translate(
+                                        random(-SHAPE_SCALE_X * 0.1, SHAPE_SCALE_X * 0.1),
+                                        random(-SHAPE_SCALE_Y * 0.1, SHAPE_SCALE_Y * 0.1 )).toString();
+
+            strokePath(canvasHandle, ghostStroke);
+
             p.pop(); 
         });
 
@@ -100,10 +115,14 @@ const s = (p: p5) => {
 
     const randomInt = (min: number, max: number): number => Math.floor(p.random(min, max + 1));
 
+    const random = (min: number, max: number) =>  {
+        return Math.random() * (max - min) + min;
+    } 
+
     const chance = (amount: number) => {
         return p.random() < amount;
     };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const myP5 = new p5(s);
+
