@@ -11,16 +11,16 @@ import { waveTransformer } from './grid-transformers/wave-transformer';
 import { random } from './helpers/random';
 import { scatterTransformer } from './grid-transformers/scatter-transformer';
 
-const CANVAS_WIDTH = 500;
-const CANVAS_HEIGHT = 500;
+const CANVAS_WIDTH = 2000;
+const CANVAS_HEIGHT = 2000;
 const ROWS = 20;
 const COLS = 20;
 const SHAPE_SCALE_X = CANVAS_WIDTH / COLS;
 const SHAPE_SCALE_Y = CANVAS_HEIGHT / ROWS;
 let bgGrid: Grid;
 
-const BG_ROWS = 60;
-const BG_COLS = 60
+const BG_ROWS = 500;
+const BG_COLS = 500;
 const BG_SHAPE_SCALE_X = CANVAS_WIDTH / BG_COLS * 1.4;
 const BG_SHAPE_SCALE_Y = CANVAS_HEIGHT / BG_ROWS * 1.4;
 let baseGrid: Grid;
@@ -74,8 +74,8 @@ const s = (p: p5) => {
         const flockA = waveA * 1.5;
 
         baseGrid.get()
-            .map(scatterTransformer(flockA, CANVAS_HEIGHT, (point) => 1 - point.y / CANVAS_HEIGHT))
-            .map(waveTransformer(f, waveA, offset, CANVAS_HEIGHT, (point) => point.y / CANVAS_HEIGHT));
+            .map(scatterTransformer(flockA, CANVAS_HEIGHT, (point) => Math.exp((1 - point.y / CANVAS_HEIGHT) * 1.4) - 1))
+            .map(waveTransformer(f, waveA, offset, CANVAS_HEIGHT, (point) => point.y / CANVAS_HEIGHT))
 
         // INIT
         seed = randomInt(0, 1000000);
@@ -100,20 +100,11 @@ const s = (p: p5) => {
 
 
         //Draw Background grid
-        /*
-        p.fill(settings.colors.tertiary);
-        bgGrid.draw(({x, y}) => {
-            p.push()
-    
-            const morph = y / CANVAS_HEIGHT  ;
-            const bgPath = bgInterpolator(morph);
-            p.translate(x, y)
-            
-            fillPath(canvasHandle, bgPath);
-    
-            p.pop();
-        })
-        */
+
+        drawBgGrid();
+
+        p.circle(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH * 0.666)
+
 
         // Draw Grid
         centerScale(p, CANVAS_WIDTH, CANVAS_HEIGHT, 0.7);
@@ -173,10 +164,20 @@ const s = (p: p5) => {
 
     const randomInt = (min: number, max: number): number => Math.floor(p.random(min, max + 1));
 
+    const drawBgGrid = () => {
+        p.fill(settings.colors.tertiary);
+        bgGrid.draw(({ x, y }) => {
+            p.push()
 
-    const chance = (amount: number) => {
-        return p.random() < amount;
-    };
+            const morph = y / CANVAS_HEIGHT;
+            const bgPath = bgInterpolator(morph);
+            p.translate(x, y)
+
+            fillPath(canvasHandle, bgPath);
+
+            p.pop();
+        })
+    }
 };
 
 const myP5 = new p5(s);

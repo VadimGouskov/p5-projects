@@ -1,6 +1,6 @@
 export const settings = {
     colors: {
-        primary: "white",
+        primary: "black",
         secondary: "orange",
         tertiary: "#87CEEB",
         background: "blue",
