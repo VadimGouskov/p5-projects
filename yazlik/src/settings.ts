@@ -1,8 +1,10 @@
 export const settings = {
     colors: {
-        primary: "black",
-        secondary: "orange",
-        tertiary: "#87CEEB",
-        background: "blue",
+        birds: "black",
+        sun: "#F6AE2D",
+        submergedSun: "#F26419",
+        water: "#0081AF",
+        waterLine: "#fff",
+        sky: "#2DC7FF",
     }
 }
