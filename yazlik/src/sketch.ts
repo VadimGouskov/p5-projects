@@ -39,6 +39,8 @@ const OCEAN_ACCENT_WIDTH = CANVAS_HEIGHT / 600;
 
 // SUN
 const SUN_DIAMETER = CANVAS_WIDTH * 0.666;
+const SUN_X = CANVAS_WIDTH / 2
+const SUN_Y = CANVAS_HEIGHT / 2;
 
 // RADIATION
 const RADIATION_COLS = 1000;
@@ -207,13 +209,12 @@ const s = (p: p5) => {
     const drawMaskedSun = () => {
         // SUN
         p.fill(settings.colors.sun)
-        const sunX = CANVAS_WIDTH / 2
-        const sunY = CANVAS_HEIGHT / 2;
+
         const bgGraphics = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
         const bgMask = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
         const maskColor = bgMask.color(0, 255);
         bgMask.fill(maskColor)
-        bgMask.circle(sunX, sunY, SUN_DIAMETER)
+        bgMask.circle(SUN_X, SUN_Y, SUN_DIAMETER)
 
         bgGraphics.background(settings.colors.sun);
         // OCEAN
@@ -285,6 +286,17 @@ const s = (p: p5) => {
         // Ghost stroke
         // p.stroke(settings.colors.secondary);
 
+        const counterScale = 1 / FLOCK_SCALE;
+        const mask = p.createGraphics(CANVAS_WIDTH * counterScale, CANVAS_HEIGHT * counterScale);
+        const maskDiameter = SUN_DIAMETER * 1.05;
+
+        // mask.background("#ffff")
+        mask.fill("#fff");
+        mask.circle(SUN_X, SUN_Y, maskDiameter * counterScale)
+
+
+
+
         baseGrid
             .draw(({ x, y }, col, row) => {
 
@@ -305,9 +317,14 @@ const s = (p: p5) => {
 
                 p.pop();
             }, (point, col, row) => {
-                if (!col || !row) return true;
+                if (!row) return false;
 
-                return true;
+                const maskPixel = mask.get(point.x, point.y);
+
+                if (row < FLOCK_ROWS / 2) { return true }
+
+                return (maskPixel[3] !== 0);
+
             });
     }
 };
