@@ -23,6 +23,7 @@ const FLOCK_SCALE = 0.6
 const FLOCK_SCATTER = 3;
 const FLOCK_PERIODS = 1;
 const FLOCK_WAVE_AMPLITUDE = 0.02;
+const FLOCK_WAVE_SCALE_WEIGHT = 0.4;
 let bgGrid: Grid;
 
 
@@ -304,6 +305,10 @@ const s = (p: p5) => {
                 const morph = y / CANVAS_HEIGHT;
                 const mainPath = interpolator(morph);
                 p.translate(x, y)
+
+                if (!row) return;
+                const scale = 1 + Math.min(0, Math.cos(row! / FLOCK_ROWS * Math.PI * 2) * FLOCK_WAVE_SCALE_WEIGHT)
+                p.scale(scale);
 
                 fillPath(canvasHandle, mainPath);
 
