@@ -21,6 +21,7 @@ const SHAPE_SCALE_X = CANVAS_WIDTH / FLOCK_COLS;
 const SHAPE_SCALE_Y = CANVAS_HEIGHT / FLOCK_ROWS;
 const FLOCK_SCALE = 0.6
 const FLOCK_SCATTER = 3;
+const FLOCK_SPREAD = 1.5;
 const FLOCK_PERIODS = 1;
 const FLOCK_WAVE_AMPLITUDE = 0.02;
 const FLOCK_WAVE_SCALE_WEIGHT = 0.4;
@@ -49,6 +50,8 @@ const RADIATION_ROWS = 40;
 const RADIATION_CHANCE_OFFSET = -0.3;
 const RADIATION_DIAMETER = 4;
 
+let randomSeed = 0;
+
 const s = (p: p5) => {
     let seed = 0;
     let canvasHandle: HTMLCanvasElement;
@@ -56,6 +59,7 @@ const s = (p: p5) => {
     // p.preload = () => {};
     let interpolator: (input: number) => any;
     let bgInterpolator: (input: number) => any;
+
 
     p.preload = () => {
         const initSvgs = async () => {
@@ -81,6 +85,10 @@ const s = (p: p5) => {
         const canvas = p.createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
 
         canvas.parent('sketch');
+
+        // INIT
+        randomSeed = randomInt(0, 1000000);
+        p.randomSeed(randomSeed);
         // p.noLoop();
 
         // Init Bg grid
@@ -92,17 +100,15 @@ const s = (p: p5) => {
         // Transform Grid
         const f = Math.PI * FLOCK_SCATTER * FLOCK_PERIODS;
         const waveA = CANVAS_HEIGHT * FLOCK_WAVE_AMPLITUDE
-        const offset = random(-Math.PI, Math.PI)
+        const offset = Math.PI / 2 // random(-Math.PI, Math.PI)
 
         const flockA = waveA * FLOCK_SCATTER;
 
         baseGrid.get()
-            .map(scatterTransformer(flockA, CANVAS_HEIGHT, (point) => Math.exp((1 - point.y / CANVAS_HEIGHT) * 1.4) - 1))
+            .map(scatterTransformer(p, flockA, CANVAS_HEIGHT, (point) => Math.exp((1 - point.y / CANVAS_HEIGHT) * FLOCK_SPREAD) - 1))
             .map(waveTransformer(f, waveA, offset, CANVAS_HEIGHT, (point) => point.y / CANVAS_HEIGHT))
 
-        // INIT
-        seed = randomInt(0, 1000000);
-        p.randomSeed(seed);
+
     };
 
     p.draw = () => {
@@ -127,6 +133,11 @@ const s = (p: p5) => {
 
         p.pop()
 
+        // // NOISE
+        // p.push()
+        // drawNoiseOverlay();
+        // p.pop()
+
         // SUN
         drawMaskedSun();
 
@@ -137,10 +148,6 @@ const s = (p: p5) => {
         centerScale(p, CANVAS_WIDTH, CANVAS_HEIGHT, FLOCK_SCALE);
         drawFlock();
         p.pop();
-
-
-
-
 
 
         //
@@ -162,7 +169,7 @@ const s = (p: p5) => {
     p.keyPressed = () => {
         if (p.key === "S") {
             const timestamp = Date.now()
-            p.save(`yazlik_${timestamp}`);
+            p.save(`yazlik_${timestamp}_${randomSeed}`);
         }
     }
 
@@ -312,10 +319,10 @@ const s = (p: p5) => {
 
                 fillPath(canvasHandle, mainPath);
 
-                const ghostStroke = svgPath(interpolator(morph + random(-0.1, 0.1)))
+                const ghostStroke = svgPath(interpolator(morph + random(p, -0.1, 0.1)))
                     .translate(
-                        random(-SHAPE_SCALE_X * 0.1, SHAPE_SCALE_X * 0.1),
-                        random(-SHAPE_SCALE_Y * 0.1, SHAPE_SCALE_Y * 0.1)).toString();
+                        random(p, -SHAPE_SCALE_X * 0.1, SHAPE_SCALE_X * 0.1),
+                        random(p, -SHAPE_SCALE_Y * 0.1, SHAPE_SCALE_Y * 0.1)).toString();
 
 
                 //strokePath(canvasHandle, ghostStroke);
@@ -331,6 +338,57 @@ const s = (p: p5) => {
                 return (maskPixel[3] !== 0);
 
             });
+    }
+
+    const drawNoiseOverlay = () => {
+
+        const NOISE_ALPHA = 40;
+        const NOISE_SPEED = 0.03;
+        const NOISE_X_DIVIDER = 3
+
+        p.push();
+        const noise = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+        for (let x = 0; x < CANVAS_WIDTH; x++) {
+            for (let y = 0; y < CANVAS_WIDTH; y++) {
+                const color = noise.color(p.noise(x * NOISE_SPEED / NOISE_X_DIVIDER, y * NOISE_SPEED) * 255, NOISE_ALPHA);
+                noise.set(x, y, color);
+            }
+        }
+
+        noise.updatePixels();
+
+        const noiseMask = p.createGraphics(CANVAS_WIDTH, CANVAS_HEIGHT);
+        const maskColor = noiseMask.color(0, 255);
+
+        noiseMask.fill(maskColor);
+        drawOcean(noiseMask);
+
+
+        // noiseMask.noStroke();
+        // noiseMask.fill(maskColor)
+        // noiseMask.remove();
+
+        // noiseMask.circle(SUN_X, SUN_Y, SUN_DIAMETER);
+
+
+        // for (let x = 0; x < CANVAS_WIDTH; x++) {
+        //     for (let y = 0; y < CANVAS_WIDTH; y++) {
+        //         const color = noiseMask.get(x, y);
+        //         const invertedAlpha = 255 - color[3];
+        //         color[3] = invertedAlpha;
+        //         noiseMask.set(x, y, color);
+        //     }
+        // }
+
+        // noiseMask.updatePixels();
+
+
+        const maskedNoise = noise.get();
+        maskedNoise.mask(noiseMask.get());
+
+        p.blendMode(p.LIGHTEST)
+        p.image(maskedNoise, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+        p.pop()
     }
 };
 
