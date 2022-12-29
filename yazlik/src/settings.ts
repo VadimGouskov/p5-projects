@@ -18,13 +18,22 @@ export const settings = {
     // }
 
 
+    // colors: {
+    //     birds: "black",
+    //     sun: "#f6b8bb",
+    //     submergedSun: "#fef5d7",
+    //     water: "#a5cfda",
+    //     waterLine: "#fff",
+    //     sky: "#fef5d7",
+    // }
+
     colors: {
         birds: "black",
-        sun: "#f6b8bb",
-        submergedSun: "#fef5d7",
-        water: "#a5cfda",
+        sun: "#fef5d7",
+        submergedSun: "#f6b8bb",
+        water: "#fef5d7",
         waterLine: "#fff",
-        sky: "#fef5d7",
+        sky: "#a5cfda",
     }
 }
 

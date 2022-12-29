@@ -87,7 +87,11 @@ const s = (p: p5) => {
         canvas.parent('sketch');
 
         // INIT
-        randomSeed = randomInt(0, 1000000);
+        // 411967471968
+        // 1968070119670104
+        // 68716714
+        //1967010419680701
+        randomSeed = 1967010419680701;
         p.randomSeed(randomSeed);
         // p.noLoop();
 
