@@ -7,14 +7,16 @@ import {
 } from "@svgdotjs/svg.js";
 
 import { createGrid } from "pretty-grid";
+import { Boid } from "./boid";
+import Victor from "victor";
 
 const WIDTH = 700;
 const HEIGHT = 700;
 
 const WORK_SIZE = 0.8;
 
-const COLS = 50;
-const ROWS = 50;
+const COLS = 80;
+const ROWS = 150;
 
 const GRID_WIDTH = WIDTH * WORK_SIZE;
 const GRID_HEIGHT = HEIGHT * WORK_SIZE;
@@ -38,19 +40,20 @@ const grid = createGrid({
 
 grid.translate(GRID_OFFSETX, GRID_OFFSETY);
 
-grid.every((point, col, row) => {
-  const fill = Math.random() > 0.5 ? "#F4442E" : "blue";
-  const selector = (col! * row!) % Math.ceil(col! / DIVIDER);
+const AMOUNT = 50;
 
-  if (selector === 0 || col === 0) {
-    const rect = draw.rect(DIV_WIDTH, DIV_HEIGHT).attr({ fill });
-    rect.attr({ x: point.x, y: point.y });
-  } else {
-    const circle = draw
-      .circle(DIV_WIDTH, DIV_HEIGHT)
-      .attr({ fill })
-      .attr({ cx: point.x, cy: point.y });
-  }
-});
+const boid = new Boid({ x: 10, y: 10, maxSpeed: 4 });
+const rect = draw.rect(10, 10).attr({ x: boid.x, y: boid.y });
+
+const target = new Victor(100, 100);
+const circle = draw.circle(10).attr({ cx: target.x, cy: target.y }).fill("red");
+
+const loop = () => {
+  boid.seek(target.clone());
+  boid.update();
+  rect.attr({ x: boid.x, y: boid.y });
+};
+
+const interval = setInterval(loop, 100);
 
 //you can download svg file by right click menu.
