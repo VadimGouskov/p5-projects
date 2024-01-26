@@ -1,4 +1,4 @@
-# Boids Flocking algorithms in Typescript and SVG.js
+# Boids Flocking Algorithm in Typescript and SVG.js
 
 This is a simple implementation of the [Boids](https://www.red3d.com/cwr/boids/) algorithm in Typescript and [SVG.js](https://svgjs.com/docs/3.0/) . It is based on the implementation of Daniel Shiffman in [The Nature of Code](https://natureofcode.com/autonomous-agents/#flocking).
 
