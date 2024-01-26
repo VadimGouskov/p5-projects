@@ -1,5 +1,5 @@
 */**/node_modules/**/*
-*.png
+*/progress/*.png
 *.jpg
 *.mp4
 dist/
