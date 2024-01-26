@@ -42,16 +42,23 @@ grid.translate(GRID_OFFSETX, GRID_OFFSETY);
 
 const AMOUNT = 50;
 
-const boid = new Boid({ x: 10, y: 10, maxSpeed: 4 });
-const rect = draw.rect(10, 10).attr({ x: boid.x, y: boid.y });
+const boid = new Boid({ x: 100, y: 10, maxSpeed: 4 });
+const skin = draw
+  .polygon("0,-10 -10,10 10,10")
+  .fill("blue")
+  .stroke({ width: 1 })
+  .move(boid.x, boid.y);
 
-const target = new Victor(100, 100);
+const target = new Victor(500, 100);
 const circle = draw.circle(10).attr({ cx: target.x, cy: target.y }).fill("red");
 
 const loop = () => {
   boid.seek(target.clone());
   boid.update();
-  rect.attr({ x: boid.x, y: boid.y });
+
+  // skin.rotate(boid.direction);
+  skin.x(boid.x).y(boid.y);
+  skin.transform({ rotate: boid.angle });
 };
 
 const interval = setInterval(loop, 100);

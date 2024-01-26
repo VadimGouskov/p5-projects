@@ -1,4 +1,5 @@
 import Victor from "victor";
+import { scale } from "./helpers";
 
 type BoidOptions = { x: number; y: number; maxSpeed?: number };
 
@@ -9,6 +10,8 @@ export class Boid {
   maxSpeed: number;
 
   maxForce: number;
+  arrivalDistance: number;
+  arrivalDampening: number;
 
   constructor({ x, y, ...options }: BoidOptions) {
     this.loc = new Victor(x, y);
@@ -18,6 +21,9 @@ export class Boid {
     this.maxSpeed = options.maxSpeed || 4;
 
     this.maxForce = 1;
+
+    this.arrivalDistance = 50;
+    this.arrivalDampening = 0.01;
   }
 
   applyForce = (force: Victor) => {
@@ -26,7 +32,7 @@ export class Boid {
 
   update = () => {
     this.vel.add(this.acc);
-    // this.vel = this.limitVector(this.vel, this.maxSpeed);
+    this.vel = this.limitVector(this.vel, this.maxSpeed);
     this.loc.add(this.vel);
     this.acc.multiplyScalar(0);
   };
@@ -36,17 +42,18 @@ export class Boid {
     const distance = desired.length();
     desired.normalize();
 
-    // if (distance < 100) {
-    // const m = distance / 100;
-    const m = 1;
-    desired.multiplyScalar(m * this.maxSpeed);
-    // } else {
-    //   desired.multiplyScalar(this.maxSpeed);
-    // }
+    if (distance < this.arrivalDistance) {
+      const m = scale(distance, 0, this.arrivalDistance, 0, this.maxSpeed);
+      desired.multiplyScalar(m);
+    } else {
+      desired.multiplyScalar(this.maxSpeed);
+    }
 
     desired.subtract(this.vel);
 
-    this.applyForce(desired);
+    const steer = this.limitVector(desired, this.maxForce);
+
+    this.applyForce(steer);
   };
 
   limitVector = (v: Victor, max: number) => {
@@ -62,5 +69,9 @@ export class Boid {
 
   get y() {
     return this.loc.y;
+  }
+
+  get angle() {
+    return this.vel.angleDeg() + 90;
   }
 }
