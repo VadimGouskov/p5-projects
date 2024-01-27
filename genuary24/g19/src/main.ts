@@ -12,22 +12,23 @@ import {
 
 import { Boid } from "./boid";
 import Victor from "victor";
+import { scale } from "./helpers";
 
 const WIDTH = 700;
 const HEIGHT = 700;
 
 var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 
-const BOID_AMOUNT = 75;
+const BOID_AMOUNT = 35;
 const MAX_BOID_SPEED = 5;
 
 const COLORS = ["#141111", "#92140C", "#35FF69"];
-const CIRCLE_WIDTH = 20;
+const CIRCLE_MIN_WIDTH = 10;
+const CIRCLE_MAX_WIDTH = 30;
 
 const boids: Boid[] = [];
 const skins: Circle[] = [];
 const shadows: Polygon[] = [];
-const circles: Circle[] = [];
 
 for (let i = 0; i < BOID_AMOUNT; i++) {
   const x = Math.random() * WIDTH;
@@ -40,12 +41,22 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
     startVelocityY
   ).multiplyScalar(MAX_BOID_SPEED);
 
+  const circleWidth = scale(
+    Math.random(),
+    0,
+    1,
+    CIRCLE_MIN_WIDTH,
+    CIRCLE_MAX_WIDTH
+  );
+
   boids.push(
     new Boid({
       x,
       y,
       maxSpeed: MAX_BOID_SPEED,
       velocity: startVelocity,
+      visionDistance: 30,
+      desiredSeparation: circleWidth,
     })
   );
 
@@ -64,9 +75,7 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
       .move(x, y)
   );
 
-  skins.push(
-    draw.circle(CIRCLE_WIDTH).fill(color).stroke({ width: 5 }).cx(x).cy(y)
-  );
+  skins.push(draw.circle(circleWidth).fill(color).cx(x).cy(y));
 }
 
 const loop = () => {
@@ -75,9 +84,9 @@ const loop = () => {
     const boid = boids[i];
     const skin = skins[i];
     boid.flock(boids);
-    // boid.wrap(WIDTH, HEIGHT);
+    boid.wrap(WIDTH, HEIGHT);
 
-    boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.666);
+    boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.6);
 
     boid.update();
 
@@ -88,8 +97,9 @@ const loop = () => {
 
     const p1 = boid.loc.clone();
     // rotate a point around the center of the boid
-    p1.subtractScalarX(boid.x - CIRCLE_WIDTH / 2).subtractScalarY(boid.y);
-    const p2 = p1.clone().subtractScalarX(CIRCLE_WIDTH);
+    const circleWidth = skin.width() as number;
+    p1.subtractScalarX(boid.x - circleWidth / 2).subtractScalarY(boid.y);
+    const p2 = p1.clone().subtractScalarX(circleWidth);
     p1.rotateDeg(diff.angleDeg() + 90);
     p2.rotateDeg(diff.angleDeg() + 90);
     p1.addScalarX(boid.x).addScalarY(boid.y);
