@@ -18,11 +18,11 @@ const HEIGHT = 700;
 
 var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 
-const BOID_AMOUNT = 50;
+const BOID_AMOUNT = 75;
 const MAX_BOID_SPEED = 5;
 
 const COLORS = ["#141111", "#92140C", "#35FF69"];
-const CIRCLE_WIDTH = 30;
+const CIRCLE_WIDTH = 20;
 
 const boids: Boid[] = [];
 const skins: Circle[] = [];
@@ -75,9 +75,9 @@ const loop = () => {
     const boid = boids[i];
     const skin = skins[i];
     boid.flock(boids);
-    boid.wrap(WIDTH, HEIGHT);
+    // boid.wrap(WIDTH, HEIGHT);
 
-    // boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.666);
+    boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.666);
 
     boid.update();
 

@@ -6,6 +6,8 @@ type BoidOptions = {
   y: number;
   maxSpeed?: number;
   velocity?: Victor;
+  visionDistance?: number;
+  desiredSeparation?: number;
 };
 
 export class Boid {
@@ -34,8 +36,8 @@ export class Boid {
     this.arrivalDistance = 50;
     this.arrivalDampening = 0.01;
 
-    this.visionDistance = 50;
-    this.desiredSeparation = 25;
+    this.visionDistance = options.visionDistance || 50;
+    this.desiredSeparation = options.desiredSeparation || 25;
   }
 
   applyForce = (force: Victor) => {
