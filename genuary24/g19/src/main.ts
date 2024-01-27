@@ -13,6 +13,7 @@ import {
 import { Boid } from "./boid";
 import Victor from "victor";
 import { scale } from "./helpers";
+import Color from "color";
 
 const WIDTH = 700;
 const HEIGHT = 700;
@@ -22,12 +23,17 @@ var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 const BOID_AMOUNT = 35;
 const MAX_BOID_SPEED = 5;
 
-const COLORS = ["#141111", "#92140C", "#35FF69"];
-const CIRCLE_MIN_WIDTH = 10;
-const CIRCLE_MAX_WIDTH = 30;
+const COLORS = [
+  new Color("#141111"),
+  new Color("#92140C"),
+  new Color("#35FF69"),
+];
+const CIRCLE_MIN_WIDTH = 15;
+const CIRCLE_MAX_WIDTH = 45;
 
 const boids: Boid[] = [];
 const skins: Circle[] = [];
+const innerSkins: Circle[] = [];
 const shadows: Polygon[] = [];
 
 for (let i = 0; i < BOID_AMOUNT; i++) {
@@ -70,12 +76,21 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
         [x - 5, y + 20],
         [WIDTH / 2, HEIGHT / 2],
       ])
-      .fill(color)
+      .fill(color.hex())
       .stroke({ width: 1 })
       .move(x, y)
   );
 
-  skins.push(draw.circle(circleWidth).fill(color).cx(x).cy(y));
+  const innerColor = color.darken(0.4).hex();
+
+  skins.push(draw.circle(circleWidth).fill(color.hex()).cx(x).cy(y));
+  innerSkins.push(
+    draw
+      .circle(circleWidth * 0.75)
+      .fill(innerColor)
+      .cx(x)
+      .cy(y)
+  );
 }
 
 const loop = () => {
@@ -83,6 +98,7 @@ const loop = () => {
     // flocking
     const boid = boids[i];
     const skin = skins[i];
+    const innerSkin = innerSkins[i];
     boid.flock(boids);
     boid.wrap(WIDTH, HEIGHT);
 
@@ -115,7 +131,8 @@ const loop = () => {
 
     // draw the boids
     skin.cx(boid.x).cy(boid.y);
-    skin.transform({ rotate: boid.angle });
+    innerSkin.cx(boid.x).cy(boid.y);
+    // skin.transform({ rotate: boid.angle });
   }
 };
 
