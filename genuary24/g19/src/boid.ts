@@ -115,6 +115,17 @@ export class Boid {
     }
   };
 
+  keepWithin = (target: Victor, range: number) => {
+    const distance = this.loc.clone().subtract(target);
+    const rangeBorder = range * 0.2;
+    if (distance.length() > range - rangeBorder) {
+      const m = scale(distance.length(), 0, range, 0, this.maxSpeed);
+
+      distance.multiplyScalar(m * -1);
+      this.applyForce(distance);
+    }
+  };
+
   separate = (boids: Boid[]) => {
     const sum = new Victor(0, 0);
 

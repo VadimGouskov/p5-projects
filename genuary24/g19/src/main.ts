@@ -18,7 +18,7 @@ const HEIGHT = 700;
 
 var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 
-const BOID_AMOUNT = 35;
+const BOID_AMOUNT = 50;
 const MAX_BOID_SPEED = 5;
 
 const COLORS = ["#141111", "#92140C", "#35FF69"];
@@ -76,6 +76,9 @@ const loop = () => {
     const skin = skins[i];
     boid.flock(boids);
     boid.wrap(WIDTH, HEIGHT);
+
+    // boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.666);
+
     boid.update();
 
     // draw a line which points to the center of the screen
