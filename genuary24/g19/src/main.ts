@@ -14,22 +14,36 @@ import { Boid } from "./boid";
 import Victor from "victor";
 import { scale } from "./helpers";
 import Color from "color";
+import { addWaveFilter } from "./filters";
 
 const WIDTH = 700;
 const HEIGHT = 700;
 
 var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 
-const BOID_AMOUNT = 35;
+const BOID_AMOUNT = 60;
 const MAX_BOID_SPEED = 5;
 
 const COLORS = [
-  new Color("#141111"),
-  new Color("#92140C"),
-  new Color("#35FF69"),
+  new Color("#5BBA6F"),
+  new Color("#3FA34D"),
+  new Color("#F4F2F3"),
 ];
 const CIRCLE_MIN_WIDTH = 15;
 const CIRCLE_MAX_WIDTH = 45;
+
+const background = draw.rect(WIDTH, HEIGHT).fill("#BCE7FD");
+
+draw.id("root");
+
+// Apply filters
+const shapes = draw.group();
+const root = document.getElementById("root");
+
+
+addWaveFilter("root", "noise");
+
+shapes.attr({ filter: "url(#noise)" });
 
 const boids: Boid[] = [];
 const skins: Circle[] = [];
@@ -61,7 +75,7 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
       y,
       maxSpeed: MAX_BOID_SPEED,
       velocity: startVelocity,
-      visionDistance: 30,
+      visionDistance: 45,
       desiredSeparation: circleWidth,
     })
   );
@@ -69,7 +83,7 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
   const color = COLORS[Math.floor(Math.random() * COLORS.length)];
 
   shadows.push(
-    draw
+    shapes
       .polyline()
       .plot([
         [x, y],
@@ -83,15 +97,17 @@ for (let i = 0; i < BOID_AMOUNT; i++) {
 
   const innerColor = color.darken(0.4).hex();
 
-  skins.push(draw.circle(circleWidth).fill(color.hex()).cx(x).cy(y));
+  skins.push(shapes.circle(circleWidth).fill(color.hex()).cx(x).cy(y));
   innerSkins.push(
-    draw
+    shapes
       .circle(circleWidth * 0.75)
       .fill(innerColor)
       .cx(x)
       .cy(y)
   );
 }
+
+// Filters
 
 const loop = () => {
   for (let i = 0; i < BOID_AMOUNT; i++) {
@@ -102,7 +118,7 @@ const loop = () => {
     boid.flock(boids);
     boid.wrap(WIDTH, HEIGHT);
 
-    boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.6);
+    // boid.keepWithin(new Victor(WIDTH / 2, HEIGHT / 2), WIDTH * 0.6);
 
     boid.update();
 
