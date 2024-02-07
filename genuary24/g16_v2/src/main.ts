@@ -13,8 +13,8 @@ const HEIGHT = 700;
 
 const WORK_SIZE = 0.8;
 
-const COLS = 50;
-const ROWS = 50;
+const COLS = 25;
+const ROWS = 25;
 
 const GRID_WIDTH = WIDTH * WORK_SIZE;
 const GRID_HEIGHT = HEIGHT * WORK_SIZE;
@@ -39,7 +39,7 @@ const grid = createGrid({
 grid.translate(GRID_OFFSETX, GRID_OFFSETY);
 
 grid.every((point, col, row) => {
-  const fill = Math.random() > 0.5 ? "#F4442E" : "blue";
+  const fill = "#F4442E"; // Math.random() > 0.5 ? "#F4442E" : "blue";
   const selector = (col! * row!) % Math.ceil(col! / DIVIDER);
 
   if (selector === 0 || col === 0) {
