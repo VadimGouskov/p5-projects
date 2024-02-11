@@ -1,9 +1,23 @@
-const createRangeInput = () => {
+type RangeConfig = {
+  min?: number;
+  max?: number;
+  value?: number;
+  step?: number;
+};
+
+const createRangeInput = ({
+  min = 0,
+  max = 10,
+  value = 1,
+  step = 0.1,
+}: RangeConfig) => {
   const range = document.createElement("input");
   range.type = "range";
-  range.min = "0";
-  range.max = "100";
-  range.value = "50";
+  range.min = min.toString();
+  range.max = max.toString();
+  range.value = value.toString();
+  range.step = step.toString();
+
   //   range.id = "range";
   return range;
 };
@@ -17,13 +31,13 @@ const appendInput = (range: HTMLInputElement, parentId: string) => {
 
 export class Control {
   value: number;
-  constructor(parentId: string) {
-    this.value = 50;
-    const range = createRangeInput();
+  constructor(parentId: string, rangeConfig: RangeConfig) {
+    const range = createRangeInput(rangeConfig);
+    this.value = parseFloat(range.value);
 
     range.onchange = (e) => {
       const target = e.target as HTMLInputElement;
-      const parsedValue = parseInt(target.value);
+      const parsedValue = parseFloat(target.value);
 
       this.onChange(parsedValue);
     };

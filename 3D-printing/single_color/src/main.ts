@@ -6,7 +6,7 @@ import {
   Element as SVGElement,
 } from "@svgdotjs/svg.js";
 
-import { addWaveFilter } from "./filters";
+import { addWaveFilter } from "./filters/filters";
 import { createGrid } from "pretty-grid";
 
 import rangeSlider from "range-slider-input";
@@ -37,7 +37,9 @@ draw.id("root");
 // Apply filters
 const group1 = draw.group();
 
-addWaveFilter("root", "noise");
+const turbulenceFilter = addWaveFilter("root", "noise", {
+  turbulence: { numOctaves: "12" },
+});
 
 group1.attr({ filter: "url(#noise)" });
 
@@ -45,11 +47,33 @@ grid.every((point) => {
   group1.circle(CIRCLE_SIZE).cx(point.x).cy(point.y).fill("#000");
 });
 
-const depth = new Control("slider-parent");
-const control = new Control("slider-parent");
+const baseFreqXControl = new Control("slider-parent", {
+  min: 0.002,
+  max: 0.1,
+  value: 0.05,
+  step: 0.001,
+});
+const baseFreqYControl = new Control("slider-parent", {
+  min: 0.002,
+  max: 0.1,
+  value: 0.05,
+  step: 0.001,
+});
+const octavesControl = new Control("slider-parent", {});
 
 const loop = () => {
-  console.log(control.value);
+  turbulenceFilter?.setAttribute(
+    "numOctaves",
+    Math.floor(octavesControl.value).toString()
+  );
+  turbulenceFilter?.setAttribute(
+    "baseFrequency",
+    `${baseFreqXControl.value} ${baseFreqYControl.value}`
+  );
+  console.log(baseFreqXControl.value);
+
+  const root = document.getElementById("root");
+  // root.
 };
 
 setInterval(loop, 1000 / (FRAMERATE || 1));

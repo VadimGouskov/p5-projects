@@ -1,4 +1,23 @@
-export const addWaveFilter = (parentId: string, filterId: string) => {
+import { TurbulenceFilter, TurbulenceFilterConfig } from "./turbulence";
+
+type DisplacementMapFilter = {
+  in: string;
+  in2: string;
+  scale?: string;
+  xChannelSelector?: string;
+  yChannelSelector?: string;
+};
+
+type WaveFilter = {
+  turbulence?: TurbulenceFilterConfig;
+  displacementMap?: DisplacementMapFilter;
+};
+
+export const addWaveFilter = (
+  parentId: string,
+  filterId: string,
+  config?: WaveFilter
+) => {
   const root = document.getElementById(parentId);
 
   if (!root) {
@@ -12,23 +31,24 @@ export const addWaveFilter = (parentId: string, filterId: string) => {
   filter.setAttribute("id", "noise");
 
   // Turbulence filter
-  var turbulence = document.createElementNS(NS, "feTurbulence");
-  turbulence.setAttribute("type", "turbulence");
-  turbulence.setAttribute("baseFrequency", "0.005 0.01");
-  turbulence.setAttribute("result", "NOISE");
-  turbulence.setAttribute("numOctaves", "1");
+  const turbulence = new TurbulenceFilter(config?.turbulence);
 
   // Displacement Map
   const displacementMap = document.createElementNS(NS, "feDisplacementMap");
   displacementMap.setAttribute("in", "SourceGraphic");
   displacementMap.setAttribute("in2", "NOISE");
-  displacementMap.setAttribute("scale", "100");
+  displacementMap.setAttribute(
+    "scale",
+    config?.displacementMap?.scale || "100"
+  );
   displacementMap.setAttribute("xChannelSelector", "R");
   displacementMap.setAttribute("yChannelSelector", "R");
 
-  filter.appendChild(turbulence);
+  filter.appendChild(turbulence.element);
   filter.appendChild(displacementMap);
   root.appendChild(filter);
+
+  return turbulence.element;
 };
 
 `
