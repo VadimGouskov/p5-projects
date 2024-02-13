@@ -19,6 +19,7 @@ const createRangeInput = ({
   range.step = step.toString();
 
   range.style.marginRight = "16px";
+  range.style.width = "400px";
 
   //   range.id = "range";
   return range;
