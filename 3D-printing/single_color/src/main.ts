@@ -37,9 +37,7 @@ draw.id("root");
 // Apply filters
 const group1 = draw.group();
 
-const turbulenceFilter = addWaveFilter("root", "noise", {
-  turbulence: { numOctaves: "12" },
-});
+const [turbulence, displacement] = addWaveFilter("root", "noise", {});
 
 group1.attr({ filter: "url(#noise)" });
 
@@ -66,17 +64,25 @@ const octavesControl = new RangeControl("n Octaves", "slider-parent", {
   value: 1,
 });
 
+const depthControl = new RangeControl("depth", "slider-parent", {
+  min: 0,
+  max: 1000,
+  step: 5,
+  value: 30,
+});
+
 const loop = () => {
-  turbulenceFilter?.setAttribute(
+  turbulence?.setAttribute(
     "numOctaves",
     Math.floor(octavesControl.value).toString()
   );
 
-  turbulenceFilter?.setAttribute(
+  turbulence?.setAttribute(
     "baseFrequency",
     `${baseFreqXControl.value} ${baseFreqYControl.value}`
   );
-  console.log(baseFreqXControl.value);
+
+  displacement.setAttribute("scale", depthControl.value);
 
   const root = document.getElementById("root");
   forceUpdate();
