@@ -11,9 +11,9 @@ import { createGrid } from "pretty-grid";
 
 import rangeSlider from "range-slider-input";
 import "range-slider-input/dist/style.css";
-import { Control } from "./controls";
+import { RangeControl } from "./controls";
 
-const FRAMERATE = 1;
+const FRAMERATE = 4;
 
 const WIDTH = 700;
 const HEIGHT = 700;
@@ -47,25 +47,31 @@ grid.every((point) => {
   group1.circle(CIRCLE_SIZE).cx(point.x).cy(point.y).fill("#000");
 });
 
-const baseFreqXControl = new Control("slider-parent", {
+const baseFreqXControl = new RangeControl("X Freq", "slider-parent", {
   min: 0.002,
   max: 0.1,
   value: 0.05,
   step: 0.001,
 });
-const baseFreqYControl = new Control("slider-parent", {
+const baseFreqYControl = new RangeControl("Y Freq", "slider-parent", {
   min: 0.002,
   max: 0.1,
   value: 0.05,
   step: 0.001,
 });
-const octavesControl = new Control("slider-parent", {});
+const octavesControl = new RangeControl("n Octaves", "slider-parent", {
+  min: 0,
+  max: 8,
+  step: 1,
+  value: 1,
+});
 
 const loop = () => {
   turbulenceFilter?.setAttribute(
     "numOctaves",
     Math.floor(octavesControl.value).toString()
   );
+
   turbulenceFilter?.setAttribute(
     "baseFrequency",
     `${baseFreqXControl.value} ${baseFreqYControl.value}`
@@ -73,7 +79,12 @@ const loop = () => {
   console.log(baseFreqXControl.value);
 
   const root = document.getElementById("root");
-  // root.
+  forceUpdate();
+};
+
+const forceUpdate = () => {
+  const dummy = draw.rect(0, 0);
+  dummy.remove();
 };
 
 setInterval(loop, 1000 / (FRAMERATE || 1));
