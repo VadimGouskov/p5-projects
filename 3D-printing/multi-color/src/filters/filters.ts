@@ -1,16 +1,21 @@
 import { DisplacementFilter, DisplacementMapConfig } from "./displacement";
 import { TurbulenceFilter, TurbulenceFilterConfig } from "./turbulence";
 
-type WaveFilter = {
+type WaveFilterConfig = {
   turbulence?: TurbulenceFilterConfig;
   displacementMap?: DisplacementMapConfig;
+};
+
+export type WaveFilter = {
+  turbulence: Element;
+  displacementMap: Element;
 };
 
 export const addWaveFilter = (
   parentId: string,
   filterId: string,
-  config?: WaveFilter
-) => {
+  config?: WaveFilterConfig
+): WaveFilter | undefined => {
   const root = document.getElementById(parentId);
 
   if (!root) {
@@ -21,7 +26,7 @@ export const addWaveFilter = (
 
   // initialize filter
   var filter = document.createElementNS(NS, "filter");
-  filter.setAttribute("id", "noise");
+  filter.setAttribute("id", filterId);
 
   const turbulence = new TurbulenceFilter(config?.turbulence);
   const displacementMap = new DisplacementFilter(config?.displacementMap);
@@ -30,7 +35,10 @@ export const addWaveFilter = (
   filter.appendChild(displacementMap.element);
   root.appendChild(filter);
 
-  return [turbulence.element, displacementMap.element];
+  return {
+    turbulence: turbulence.element,
+    displacementMap: displacementMap.element,
+  };
 };
 
 `
@@ -50,7 +58,7 @@ export const addBlurFilter = (parentId: string, filterId: string) => {
   var NS = "http://www.w3.org/2000/svg";
 
   var filter = document.createElementNS(NS, "filter");
-  filter.setAttribute("id", "noise");
+  filter.setAttribute("id", filterId);
 
   var blur = document.createElementNS(NS, "feGaussianBlur");
   blur.setAttribute("stdDeviation", "5");

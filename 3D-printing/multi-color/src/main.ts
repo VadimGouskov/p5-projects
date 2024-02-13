@@ -4,9 +4,10 @@ import {
   SVG,
   extend as SVGextend,
   Element as SVGElement,
+  G,
 } from "@svgdotjs/svg.js";
 
-import { addWaveFilter } from "./filters/filters";
+import { WaveFilter, addWaveFilter } from "./filters/filters";
 import { createGrid } from "pretty-grid";
 
 import rangeSlider from "range-slider-input";
@@ -25,6 +26,8 @@ const CIRCLE_SIZE = (WIDTH / ROWS) * 0.666;
 
 var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
 
+draw.id("root");
+
 const grid = createGrid({
   width: WIDTH,
   height: HEIGHT,
@@ -32,57 +35,98 @@ const grid = createGrid({
   cols: COLS,
 });
 
-draw.id("root");
+type Wave = {
+  groupId: string;
+  group: G | undefined;
+  color: string;
+  filter: WaveFilter | undefined;
+  controls: RangeControl[];
+};
 
-// Apply filters
-const group1 = draw.group();
+let waves: Wave[] = [
+  {
+    groupId: "wave1",
+    group: undefined,
+    color: "000",
+    filter: undefined,
+    controls: [],
+  },
+];
 
-const [turbulence, displacement] = addWaveFilter("root", "noise", {});
+waves = waves.map((w) => {
+  const group = draw.group().id(w.groupId);
+  group.attr({ filter: `url(#filter-${w.groupId})` });
 
-group1.attr({ filter: "url(#noise)" });
+  grid.every((point) => {
+    group.circle(CIRCLE_SIZE).cx(point.x).cy(point.y).fill(w.color);
+  });
 
-grid.every((point) => {
-  group1.circle(CIRCLE_SIZE).cx(point.x).cy(point.y).fill("#000");
-});
+  const filter = addWaveFilter("root", `filter-${w.groupId}`, {});
 
-const baseFreqXControl = new RangeControl("X Freq", "slider-parent", {
-  min: 0.002,
-  max: 0.1,
-  value: 0.05,
-  step: 0.001,
-});
-const baseFreqYControl = new RangeControl("Y Freq", "slider-parent", {
-  min: 0.002,
-  max: 0.1,
-  value: 0.05,
-  step: 0.001,
-});
-const octavesControl = new RangeControl("n Octaves", "slider-parent", {
-  min: 0,
-  max: 8,
-  step: 1,
-  value: 1,
-});
+  // create group title
+  const title = document.createElement("h1");
+  title.innerHTML = w.groupId;
+  document.getElementById("slider-parent")?.appendChild(title);
 
-const depthControl = new RangeControl("depth", "slider-parent", {
-  min: 0,
-  max: 1000,
-  step: 5,
-  value: 30,
+  const octavesControl = new RangeControl("n Octaves", "slider-parent", {
+    min: 0,
+    max: 8,
+    step: 1,
+    value: 1,
+  });
+
+  const baseFreqXControl = new RangeControl("X Freq", "slider-parent", {
+    min: 0.002,
+    max: 0.1,
+    value: 0.05,
+    step: 0.001,
+  });
+  const baseFreqYControl = new RangeControl("Y Freq", "slider-parent", {
+    min: 0.002,
+    max: 0.1,
+    value: 0.05,
+    step: 0.001,
+  });
+
+  const depthControl = new RangeControl("depth", "slider-parent", {
+    min: 0,
+    max: 1000,
+    step: 5,
+    value: 30,
+  });
+
+  return {
+    ...w,
+
+    controls: [
+      octavesControl,
+      baseFreqXControl,
+      baseFreqYControl,
+      depthControl,
+    ],
+
+    filter,
+    group,
+  };
 });
 
 const loop = () => {
-  turbulence?.setAttribute(
-    "numOctaves",
-    Math.floor(octavesControl.value).toString()
-  );
+  waves.forEach((w) => {
+    w.filter?.turbulence?.setAttribute(
+      "numOctaves",
+      Math.floor(w.controls[0].value).toString()
+    );
 
-  turbulence?.setAttribute(
-    "baseFrequency",
-    `${baseFreqXControl.value} ${baseFreqYControl.value}`
-  );
+    w.filter?.turbulence?.setAttribute(
+      "baseFrequency",
+      `${w.controls[1].value} ${w.controls[2].value}`
+    );
 
-  displacement.setAttribute("scale", depthControl.value);
+    w.filter?.displacementMap.setAttribute(
+      "scale",
+      w.controls[3].value.toString()
+    );
+  });
 
   const root = document.getElementById("root");
   forceUpdate();
