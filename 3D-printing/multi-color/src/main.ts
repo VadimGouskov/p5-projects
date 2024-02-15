@@ -19,12 +19,12 @@ const FRAMERATE = 4;
 const WIDTH = 700;
 const HEIGHT = 700;
 
-const ROWS = 20;
-const COLS = 20;
+const ROWS = 10;
+const COLS = 10;
 
 const CIRCLE_SIZE = (WIDTH / ROWS) * 0.666;
 
-var draw = SVG().addTo("body").size(WIDTH, HEIGHT);
+var draw = SVG().addTo("#wrapper").size(WIDTH, HEIGHT);
 
 draw.id("root");
 
@@ -45,9 +45,23 @@ type Wave = {
 
 let waves: Wave[] = [
   {
-    groupId: "wave1",
+    groupId: "Red-dark",
     group: undefined,
-    color: "000",
+    color: "#F49090",
+    filter: undefined,
+    controls: [],
+  },
+  {
+    groupId: "Red",
+    group: undefined,
+    color: "#C11313",
+    filter: undefined,
+    controls: [],
+  },
+  {
+    groupId: "Red-Light",
+    group: undefined,
+    color: "#380505",
     filter: undefined,
     controls: [],
   },
@@ -128,7 +142,6 @@ const loop = () => {
     );
   });
 
-  const root = document.getElementById("root");
   forceUpdate();
 };
 

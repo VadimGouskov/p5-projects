@@ -56,7 +56,7 @@ export class RangeControl {
     this.value = parseFloat(this.range.value);
     this.screen = createDiv(this.value.toString());
 
-    this.range.onchange = (e) => {
+    this.range.oninput = (e) => {
       const target = e.target as HTMLInputElement;
       const parsedValue = parseFloat(target.value);
 
