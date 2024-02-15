@@ -14,7 +14,7 @@ import rangeSlider from "range-slider-input";
 import "range-slider-input/dist/style.css";
 import { RangeControl } from "./controls";
 
-const FRAMERATE = 4;
+const FRAMERATE = 10;
 
 const WIDTH = 700;
 const HEIGHT = 700;
@@ -22,18 +22,26 @@ const HEIGHT = 700;
 const ROWS = 10;
 const COLS = 10;
 
-const CIRCLE_SIZE = (WIDTH / ROWS) * 0.666;
+const CIRCLE_SIZE = (WIDTH / ROWS) * 0.333;
 
 var draw = SVG().addTo("#wrapper").size(WIDTH, HEIGHT);
 
 draw.id("root");
 
+const CONTENT_WIDTH = 500;
+const CONTENT_HEIGHT = 500;
+
 const grid = createGrid({
-  width: WIDTH,
-  height: HEIGHT,
+  width: CONTENT_WIDTH,
+  height: CONTENT_HEIGHT,
   rows: ROWS,
   cols: COLS,
 });
+
+const TRANSLATE_GRIDX = (WIDTH - CONTENT_WIDTH) / 2;
+const TRANSLATE_GRIDY = (HEIGHT - CONTENT_HEIGHT) / 2;
+
+grid.translate(TRANSLATE_GRIDX, TRANSLATE_GRIDY);
 
 type Wave = {
   groupId: string;
@@ -90,22 +98,22 @@ waves = waves.map((w) => {
   });
 
   const baseFreqXControl = new RangeControl("X Freq", "slider-parent", {
-    min: 0.002,
-    max: 0.1,
-    value: 0.05,
-    step: 0.001,
+    min: 0.001,
+    max: 0.02,
+    value: 0.001,
+    step: 0.0001,
   });
   const baseFreqYControl = new RangeControl("Y Freq", "slider-parent", {
-    min: 0.002,
-    max: 0.1,
-    value: 0.05,
-    step: 0.001,
+    min: 0.001,
+    max: 0.02,
+    value: 0.001,
+    step: 0.0001,
   });
 
   const depthControl = new RangeControl("depth", "slider-parent", {
     min: 0,
-    max: 1000,
-    step: 5,
+    max: 500,
+    step: 1,
     value: 30,
   });
 
