@@ -32,10 +32,21 @@ const createLabel = (content: string) => {
   return label;
 };
 
-const createDiv = (content: string) => {
-  const div = document.createElement("div");
-  div.innerHTML = content;
-  return div;
+const createInput = ({
+  min = 0,
+  max = 10,
+  value = 1,
+  step = 0.1,
+}: RangeConfig) => {
+  const input = document.createElement("input");
+  input.type = "number";
+  input.min = min.toString();
+  input.max = max.toString();
+  input.value = value.toString();
+  input.step = step.toString();
+  input.style.width = "75px";
+
+  return input;
 };
 
 const appendElement = (range: HTMLElement, parentId: string) => {
@@ -49,17 +60,28 @@ export class RangeControl {
   value: number;
   range: HTMLInputElement;
   label: HTMLLabelElement;
-  screen: HTMLDivElement;
+  input: HTMLInputElement;
   constructor(label = "", parentId: string, rangeConfig: RangeConfig) {
     this.range = createRangeInput(rangeConfig);
+    this.input = createInput(rangeConfig);
     this.label = createLabel(label);
     this.value = parseFloat(this.range.value);
-    this.screen = createDiv(this.value.toString());
 
     this.range.oninput = (e) => {
       const target = e.target as HTMLInputElement;
-      const parsedValue = parseFloat(target.value);
+      // reflect value on input
+      this.input.value = target.value;
 
+      // single source of truth
+      const parsedValue = parseFloat(target.value);
+      this.onChange(parsedValue);
+    };
+
+    this.input.oninput = (e) => {
+      const target = e.target as HTMLInputElement;
+      this.range.value = target.value;
+
+      const parsedValue = parseFloat(target.value);
       this.onChange(parsedValue);
     };
 
@@ -69,17 +91,12 @@ export class RangeControl {
 
     container.appendChild(this.label);
     container.appendChild(this.range);
-    container.appendChild(this.screen);
+    container.appendChild(this.input);
 
     appendElement(container, parentId);
-
-    // appendElement(this.range, parentId);
-    // appendElement(this.label, parentId);
-    // appendElement(this.screen, parentId);
   }
 
   onChange = (value: number) => {
     this.value = value;
-    this.screen.innerHTML = this.value.toString();
   };
 }
