@@ -5,6 +5,8 @@ import {
   extend as SVGextend,
   Element as SVGElement,
   G,
+  Circle,
+  Rect,
 } from "@svgdotjs/svg.js";
 
 import { WaveFilter, addWaveFilter } from "./filters/filters";
@@ -22,7 +24,7 @@ const HEIGHT = 700;
 const ROWS = 10;
 const COLS = 10;
 
-const CIRCLE_SIZE = (WIDTH / ROWS) * 0.333;
+const BASE_SIZE = WIDTH / ROWS;
 
 var draw = SVG().addTo("#wrapper").size(WIDTH, HEIGHT);
 
@@ -43,35 +45,45 @@ const TRANSLATE_GRIDY = (HEIGHT - CONTENT_HEIGHT) / 2;
 
 grid.translate(TRANSLATE_GRIDX, TRANSLATE_GRIDY);
 
+const DEPTH_TRANSLATION_FACTOR = 0.35;
+
 type Wave = {
   groupId: string;
   group: G | undefined;
   color: string;
   filter: WaveFilter | undefined;
   controls: RangeControl[];
+  svg: () => SVGElement;
 };
 
 let waves: Wave[] = [
   {
-    groupId: "Red-dark",
+    groupId: "LAYER-1",
     group: undefined,
     color: "#F49090",
     filter: undefined,
     controls: [],
+    svg: () => new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 }),
   },
   {
-    groupId: "Red",
+    groupId: "LAYER-2",
     group: undefined,
     color: "#C11313",
     filter: undefined,
     controls: [],
+    svg: () =>
+      new Rect({ width: BASE_SIZE * 0.666, height: BASE_SIZE * 0.6666 }),
   },
   {
-    groupId: "Red-Light",
+    groupId: "LAYER-3",
     group: undefined,
     color: "#380505",
     filter: undefined,
     controls: [],
+    svg: () =>
+      new Circle({
+        r: BASE_SIZE * 0.25,
+      }),
   },
 ];
 
@@ -80,7 +92,9 @@ waves = waves.map((w) => {
   group.attr({ filter: `url(#filter-${w.groupId})` });
 
   grid.every((point) => {
-    group.circle(CIRCLE_SIZE).cx(point.x).cy(point.y).fill(w.color);
+    const generated = w.svg();
+    generated.cx(point.x).cy(point.y).fill(w.color);
+    group.add(generated);
   });
 
   const filter = addWaveFilter("root", `filter-${w.groupId}`, {});
@@ -117,6 +131,15 @@ waves = waves.map((w) => {
     value: 30,
   });
 
+  const opacityControl = new RangeControl("opacity", "slider-parent", {
+    min: 0,
+    max: 1,
+    step: 0.01,
+    value: 1,
+  });
+
+  group?.rect(WIDTH, HEIGHT).fill("#0000").attr({ stationary: true });
+
   return {
     ...w,
 
@@ -125,6 +148,7 @@ waves = waves.map((w) => {
       baseFreqXControl,
       baseFreqYControl,
       depthControl,
+      opacityControl,
     ],
 
     filter,
@@ -133,6 +157,18 @@ waves = waves.map((w) => {
 });
 
 const loop = () => {
+  waves.forEach((w) => {
+    const depth = w.controls[3].value * DEPTH_TRANSLATION_FACTOR;
+
+    w.group?.children().forEach((c) => {
+      if (c.attr("stationary")) {
+        return;
+      }
+
+      c.transform({ translateX: -depth, translateY: -depth });
+    });
+  });
+
   waves.forEach((w) => {
     w.filter?.turbulence?.setAttribute(
       "numOctaves",
@@ -148,6 +184,8 @@ const loop = () => {
       "scale",
       w.controls[3].value.toString()
     );
+
+    w.group?.opacity(w.controls[4].value);
   });
 
   forceUpdate();
