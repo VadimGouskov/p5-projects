@@ -50,7 +50,6 @@ const DEPTH_TRANSLATION_FACTOR = 0.35;
 type Wave = {
   groupId: string;
   group: G | undefined;
-  color: string;
   filter: WaveFilter | undefined;
   controls: RangeControl[];
   svg: () => SVGElement;
@@ -60,30 +59,35 @@ let waves: Wave[] = [
   {
     groupId: "LAYER-1",
     group: undefined,
-    color: "#F49090",
     filter: undefined,
     controls: [],
-    svg: () => new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 }),
+    svg: () =>
+      new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 }).fill(
+        "#F49090"
+      ),
   },
   {
     groupId: "LAYER-2",
     group: undefined,
-    color: "#C11313",
     filter: undefined,
     controls: [],
     svg: () =>
-      new Rect({ width: BASE_SIZE * 0.666, height: BASE_SIZE * 0.6666 }),
+      new Rect({ width: BASE_SIZE * 0.666, height: BASE_SIZE * 0.6666 }).fill(
+        "#C11313"
+      ),
   },
   {
     groupId: "LAYER-3",
     group: undefined,
-    color: "#380505",
     filter: undefined,
     controls: [],
     svg: () =>
-      new Circle({
-        r: BASE_SIZE * 0.25,
-      }),
+      new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 })
+        .fill("#0000")
+        .stroke({
+          color: "#000",
+          width: 3,
+        }),
   },
 ];
 
@@ -93,7 +97,7 @@ waves = waves.map((w) => {
 
   grid.every((point) => {
     const generated = w.svg();
-    generated.cx(point.x).cy(point.y).fill(w.color);
+    generated.cx(point.x).cy(point.y);
     group.add(generated);
   });
 
