@@ -55,57 +55,34 @@ type Wave = {
   svg: () => SVGElement;
 };
 
-let waves: Wave[] = [
-  {
-    groupId: "LAYER-1",
-    group: undefined,
-    filter: undefined,
-    controls: [],
-    svg: () =>
-      new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 }).fill(
-        "#F49090"
-      ),
-  },
-  {
-    groupId: "LAYER-2",
-    group: undefined,
-    filter: undefined,
-    controls: [],
-    svg: () =>
-      new Rect({ width: BASE_SIZE * 0.666, height: BASE_SIZE * 0.6666 }).fill(
-        "#C11313"
-      ),
-  },
-  {
-    groupId: "LAYER-3",
-    group: undefined,
-    filter: undefined,
-    controls: [],
-    svg: () =>
-      new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 })
-        .fill("#0000")
-        .stroke({
-          color: "#000",
-          width: 3,
-        }),
-  },
-];
+const colors = ["#9fffcb", "#004E64", "#00A5CF", "#25a18e", "#F7F7FF"];
 
-waves = waves.map((w) => {
-  const group = draw.group().id(w.groupId);
-  group.attr({ filter: `url(#filter-${w.groupId})` });
+const totalWaves = colors.length;
 
-  grid.every((point) => {
-    const generated = w.svg();
-    generated.cx(point.x).cy(point.y);
-    group.add(generated);
-  });
+let waves: Wave[] = colors.map((color, index) => {
+  const groupId = `LAYER-${index + 1}`;
+  const group = draw.group().id(groupId);
+  group.attr({ filter: `url(#filter-${groupId})` });
 
-  const filter = addWaveFilter("root", `filter-${w.groupId}`, {});
+  grid.every(
+    (point) => {
+      const generated = new Rect({
+        width: BASE_SIZE * 0.75,
+        height: BASE_SIZE * 0.75,
+      }).fill(color);
+      generated.cx(point.x).cy(point.y);
+      group.add(generated);
+    },
+    () => {
+      return Math.random() > index / totalWaves;
+    }
+  );
+
+  const filter = addWaveFilter("root", `filter-${groupId}`, {});
 
   // create group title
   const title = document.createElement("h1");
-  title.innerHTML = w.groupId;
+  title.innerHTML = groupId;
   document.getElementById("slider-parent")?.appendChild(title);
 
   const octavesControl = new RangeControl("n Octaves", "slider-parent", {
@@ -118,13 +95,13 @@ waves = waves.map((w) => {
   const baseFreqXControl = new RangeControl("X Freq", "slider-parent", {
     min: 0.001,
     max: 0.02,
-    value: 0.001,
+    value: 0.0015,
     step: 0.0001,
   });
   const baseFreqYControl = new RangeControl("Y Freq", "slider-parent", {
     min: 0.001,
     max: 0.02,
-    value: 0.001,
+    value: 0.002,
     step: 0.0001,
   });
 
@@ -132,7 +109,7 @@ waves = waves.map((w) => {
     min: 0,
     max: 500,
     step: 1,
-    value: 30,
+    value: 0,
   });
 
   const opacityControl = new RangeControl("opacity", "slider-parent", {
@@ -145,8 +122,9 @@ waves = waves.map((w) => {
   group?.rect(WIDTH, HEIGHT).fill("#0000").attr({ stationary: true });
 
   return {
-    ...w,
-
+    groupId,
+    group,
+    filter,
     controls: [
       octavesControl,
       baseFreqXControl,
@@ -154,9 +132,10 @@ waves = waves.map((w) => {
       depthControl,
       opacityControl,
     ],
-
-    filter,
-    group,
+    svg: () =>
+      new Rect({ width: BASE_SIZE * 0.75, height: BASE_SIZE * 0.75 }).fill(
+        color
+      ),
   };
 });
 
