@@ -14,16 +14,14 @@ import { createGrid } from "pretty-grid";
 import rangeSlider from "range-slider-input";
 import "range-slider-input/dist/style.css";
 import { RangeControl } from "./controls";
+import { Body } from "./body";
 
 const FRAMERATE = 10;
 
 const WIDTH = 700;
 const HEIGHT = 700;
 
-const ROWS = 100;
-const COLS = 100;
-
-const BASE_SIZE = WIDTH / ROWS;
+const BODIES = 10;
 
 var draw = SVG().addTo("#wrapper").size(WIDTH, HEIGHT);
 
@@ -32,31 +30,8 @@ draw.id("root");
 const CONTENT_WIDTH = 500;
 const CONTENT_HEIGHT = 500;
 
-const grid = createGrid({
-  width: CONTENT_WIDTH,
-  height: CONTENT_HEIGHT,
-  rows: ROWS,
-  cols: COLS,
-});
-
 let AMP = CONTENT_HEIGHT / 2;
 let LENGTH = Math.PI * 2;
-const A = 50;
-const B = 1;
-const C = 5;
-
-const D = 2.5;
-const E = 5;
-const F = 50;
-const G = 5;
-
-const H = 0.02;
-const I = 5;
-const J = 5;
-const K = 5;
-const L = 5;
-const M = 5;
-const N = 5;
 
 let t = 0;
 
@@ -72,33 +47,49 @@ const lengthInput = new RangeControl("length", "slider-parent", {
   min: 0,
   max: Math.PI * 2,
   value: LENGTH,
-  step: 0.01,
+  step: 0.0025,
 });
 
-for (let col = 0; col < COLS; col++) {
-  for (let row = 0; row < ROWS; row++) {
-    group.circle(BASE_SIZE).move(col * BASE_SIZE, row * BASE_SIZE);
-  }
+const speed = new RangeControl("speed", "slider-parent", {
+  min: 0,
+  max: 0.05,
+  value: 0.1,
+  step: 0.00005,
+});
+
+const bodies: Body[] = [];
+
+for (let i = 0; i < BODIES; i++) {
+  const type = i % 2 === 0 ? "Gozde" : "Vadim";
+
+  const x = Math.random() * CONTENT_WIDTH;
+  const y = Math.random() * CONTENT_HEIGHT;
+
+  group
+    .circle(10)
+    .cx(x)
+    .cy(y)
+    .fill(type === "Gozde" ? "blue" : "red");
+  const body = new Body({ x: x, y: y, mass: 5, maxSpeed: 1 });
+
+  bodies.push(body);
 }
 
 group.move(0, CONTENT_HEIGHT / 2);
 
 const loop = () => {
-  AMP = ampInput.value;
-  LENGTH = lengthInput.value;
+  bodies.forEach((body, index, rest) => {
+    rest.forEach((other, otherIndex) => {
+      if (index === otherIndex) return;
 
-  for (let col = 0; col < COLS; col++) {
-    for (let row = 0; row < ROWS; row++) {
-      const w0 =
-        AMP *
-        Math.sin(LENGTH * col + B * t + C + D * Math.sin(E * row + F * t + G));
-      const w1 =
-        AMP * Math.sin(H * col + I * t + J + K * Math.sin(L * row + M * t + N));
-      const y = (w0 + w1) / 2;
+      other.attract(body);
+      body.update();
+    });
 
-      group.get(col * ROWS + row).y(y + CONTENT_HEIGHT / 2);
-    }
-  }
+    body.wrap(CONTENT_WIDTH, CONTENT_HEIGHT);
+
+    group.get(index).cx(body.loc.x).cy(body.loc.y);
+  });
 
   forceUpdate();
 };
