@@ -5,9 +5,10 @@ type BoidOptions = {
   x: number;
   y: number;
   maxSpeed?: number;
+  maxForce?: number;
   velocity?: Victor;
   mass: number;
-  type?: string;
+  type: string;
 };
 
 export class Body {
@@ -16,6 +17,14 @@ export class Body {
   acc: Victor;
   maxSpeed: number;
   mass: number;
+  massMult: number = 1;
+  type: string;
+
+  G: number = 10;
+
+  sameTypeAttraction = 10;
+  minDistance = 10;
+  maxDistance = 200;
 
   maxForce: number;
   arrivalDistance: number;
@@ -30,16 +39,17 @@ export class Body {
     this.vel = options.velocity || new Victor(0, 0);
     this.acc = new Victor(0, 0);
 
-    this.maxSpeed = options.maxSpeed || 4;
+    this.maxSpeed = options.maxSpeed || 0.02;
 
-    this.maxForce = 1;
+    this.maxForce = options.maxForce || 0.02;
 
     this.arrivalDistance = 50;
     this.arrivalDampening = 0.01;
 
     this.visionDistance = 50;
-    this.desiredSeparation = 25;
+    this.desiredSeparation = 100;
     this.mass = options.mass || 2;
+    this.type = options.type;
   }
 
   get x() {
@@ -58,7 +68,18 @@ export class Body {
     const force = target.loc.clone().subtract(this.loc);
     const distance = force.length();
     const G = 1;
-    const strength = G * ((this.mass * target.mass) / distance ** 2);
+
+    let attraction = this.mass * this.massMult * this.sameTypeAttraction;
+
+    const maxDistance = 1000;
+    const minDistance = 20;
+
+    const cappedDistance = Math.min(
+      Math.max(distance ** 2, minDistance),
+      maxDistance
+    );
+
+    const strength = G * ((attraction * target.mass) / cappedDistance);
 
     force.normalize();
     force.multiplyScalar(strength);
@@ -105,7 +126,7 @@ export class Body {
     return new Victor(f * v.x, f * v.y);
   };
 
-  flock = (boids: Boid[]) => {
+  flock = (boids: Body[]) => {
     const sep = this.separate(boids);
     const ali = this.align(boids);
     const coh = this.cohesion(boids);
@@ -133,7 +154,7 @@ export class Body {
     }
   };
 
-  separate = (boids: Boid[]) => {
+  separate = (boids: Body[]) => {
     const sum = new Victor(0, 0);
 
     let count = 0;
@@ -159,7 +180,7 @@ export class Body {
     return steer;
   };
 
-  align = (boids: Boid[]) => {
+  align = (boids: Body[]) => {
     const sum = new Victor(0, 0);
     let count = 0;
     for (let boid of boids) {
@@ -181,7 +202,7 @@ export class Body {
     return steer;
   };
 
-  cohesion = (boids: Boid[]) => {
+  cohesion = (boids: Body[]) => {
     const sum = new Victor(0, 0);
     let count = 0;
     for (let boid of boids) {
