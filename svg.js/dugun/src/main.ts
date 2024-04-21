@@ -63,6 +63,20 @@ const sameTypeAttractionControl = new RangeControl(
   }
 );
 
+const minDistanceControl = new RangeControl("minDistance", "slider-parent", {
+  min: 1,
+  max: 100,
+  value: 20,
+  step: 0.1,
+});
+
+const maxDistanceControl = new RangeControl("maxDistance", "slider-parent", {
+  min: 1,
+  max: 1000,
+  value: 50,
+  step: 0.1,
+});
+
 const bodies: Body[] = [];
 
 for (let i = 0; i < BODIES; i++) {
@@ -78,14 +92,14 @@ for (let i = 0; i < BODIES; i++) {
     // .fill(type === "Gozde" ? "#F8F3F2" : "#EDFCFC");
     .fill(type === "Gozde" ? "red" : "blue");
 
-  const mass = Math.random() * 3;
+  const mass = Math.random() * 3 + 1;
 
   const body = new Body({
     x: x,
     y: y,
     mass: mass,
-    maxSpeed: 1.5,
-    maxForce: 1.5,
+    maxSpeed: 2,
+    maxForce: 2,
     type: type,
   });
   const xVel = Math.random() * 2 - 1;
@@ -101,19 +115,24 @@ const loop = () => {
   const G = gControl.value;
   const massMult = massMultControl.value;
   const sameTypeAttraction = sameTypeAttractionControl.value;
+  const minDistance = minDistanceControl.value;
+  const maxDistance = maxDistanceControl.value;
 
   bodies.forEach((body, index, rest) => {
     body.G = G;
     body.massMult = massMult;
     body.sameTypeAttraction = sameTypeAttraction;
+    body.minDistance = minDistance;
+    body.maxDistance = maxDistance;
 
     rest.forEach((other, otherIndex) => {
       if (index === otherIndex) return;
 
-      other.attract(body);
-      // body.seek(other.loc);
-      body.update();
+      const force = body.attract(other).divideScalar(bodies.length);
+
+      body.applyForce(force);
     });
+    body.update();
 
     body.wrap(CONTENT_WIDTH, CONTENT_HEIGHT);
 

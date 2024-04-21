@@ -84,7 +84,7 @@ export class Body {
     force.normalize();
     force.multiplyScalar(strength);
 
-    this.applyForce(force);
+    // this.applyForce(force);
 
     return force;
   };
