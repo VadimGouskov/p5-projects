@@ -26,14 +26,16 @@ const H = 0.02,
 const N = 5;
 
 // BOX GRID
-const COLS = 5;
-const ROWS = 5;
+const COLS = 30;
+const ROWS = 30;
 const PLANE_SIZE = 10;
 const BOX_SIZE = PLANE_SIZE / (COLS - 1);
 const AMP = BOX_SIZE * 3;
 const MIN_BOX_HEIGHT = 0.5;
+const STEP_SIZE = 0.001;
 
 // INIT
+const ADD_COORDINATES = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -43,7 +45,7 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 
@@ -74,7 +76,7 @@ boxGroup.name = "boxGroup";
 const material = new THREE.MeshNormalMaterial();
 
 grid.every((point, row, col) => {
-  t += 0.001;
+  t += STEP_SIZE;
   if (row === undefined || col === undefined) {
     return;
   }
@@ -100,26 +102,31 @@ grid.every((point, row, col) => {
     bevelEnabled: false,
   });
 
-  const text = new THREE.Mesh(
-    textGeometry,
-    new THREE.MeshStandardMaterial({ color: 0xff0000 })
-  );
-
   cube.position.set(point.x, y / 2, point.y);
-  // sphere.position.set(point.x, 0, point.y);
-  text.position.set(point.x, MIN_BOX_HEIGHT / 4, point.y);
-  text.rotateX(Math.PI / 2);
 
-  cube.updateMatrix();
-  sphere.updateMatrix();
-  text.updateMatrix();
+  if (ADD_COORDINATES) {
+    const text = new THREE.Mesh(
+      textGeometry,
+      new THREE.MeshStandardMaterial({ color: 0xff0000 })
+    );
 
-  const res = CSG.subtract(cube, text);
+    // sphere.position.set(point.x, 0, point.y);
+    text.position.set(point.x, MIN_BOX_HEIGHT / 4, point.y);
+    text.rotateX(Math.PI / 2);
 
-  // boxGroup.add(sphere);
-  // boxGroup.add(cube);
+    cube.updateMatrix();
+    sphere.updateMatrix();
+    text.updateMatrix();
 
-  boxGroup.add(res);
+    const res = CSG.subtract(cube, text);
+
+    // boxGroup.add(sphere);
+
+    boxGroup.add(res);
+  } else {
+    boxGroup.add(cube);
+  }
+
   // boxGroup.add(text);
 });
 
