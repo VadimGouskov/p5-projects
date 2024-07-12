@@ -69,7 +69,11 @@ export class Body {
     const distance = force.length();
     const G = 1;
 
-    let attraction = this.mass * this.massMult * this.sameTypeAttraction;
+    let attraction = this.mass * this.massMult;
+
+    if (this.type === target.type) {
+      attraction *= this.sameTypeAttraction;
+    }
 
     const maxDistance = 1000;
     const minDistance = 20;

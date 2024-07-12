@@ -7,3 +7,7 @@ export function scale(
 ) {
   return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
 }
+
+export function randomInterval(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
