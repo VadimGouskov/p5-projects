@@ -57,6 +57,20 @@ const amp = new RangeControl("AMP", "controls", {
   value: 3,
 });
 
+const sliceX = new RangeControl("SLICE_X", "controls", {
+  min: 0,
+  max: 10,
+  step: 1,
+  value: 0,
+});
+
+const sliceY = new RangeControl("SLICE_Y", "controls", {
+  min: 0,
+  max: 10,
+  step: 1,
+  value: 0,
+});
+
 // Controls
 const updateParametersFromControls = () => {
   A = a.value;
@@ -103,10 +117,21 @@ boxGroup.name = "boxGroup";
 const material = new THREE.MeshNormalMaterial();
 
 const getY = (col: number, row: number, t: number) => {
+  const rowOnSLice = row + sliceX.value * ROWS;
+  const colOnSLice = col + sliceY.value * ROWS;
+
   const w0 =
-    AMP * Math.sin(A * col + B * t + C + D * Math.sin(E * row + F * t + G)) + 0;
+    AMP *
+      Math.sin(
+        A * colOnSLice + B * t + C + D * Math.sin(E * rowOnSLice + F * t + G)
+      ) +
+    0;
   const w1 =
-    AMP * Math.sin(H * col + I * t + J + K * Math.sin(L * row + M * t + N)) + 0;
+    AMP *
+      Math.sin(
+        H * colOnSLice + I * t + J + K * Math.sin(L * rowOnSLice + M * t + N)
+      ) +
+    0;
 
   return MIN_BOX_HEIGHT + Math.abs((w0 + w1) / 2);
 };
