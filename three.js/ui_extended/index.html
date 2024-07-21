@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>My first three.js app</title>
+    <style>
+      body {
+        position: relative;
+        margin: 0;
+        background-color: white !important;
+      }
+
+      #controls {
+        padding: 1rem;
+      }
+
+      #canvas-parent {
+        width: 75%;
+        aspect-ratio: 16 / 9;
+      }
+
+      .layout-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <script type="module" src="src/main.ts"></script>
+    <div class="layout-container">
+      <div id="canvas-parent"></div>
+      <div id="controls">
+        <button type="button" id="export-button">print</button>
+        <h2>General</h2>
+        <div id="general-controls"></div>
+        <h2>Wobbly</h2>
+        <div id="wobbly-controls"></div>
+        <h2>Perlin</h2>
+        <div id="perlin-controls"></div>
+      </div>
+    </div>
+  </body>
+</html>
