@@ -5,6 +5,7 @@ import { createGrid } from "pretty-grid";
 import { RangeControl } from "./controls";
 
 import { createNoise2D } from "simplex-noise";
+import { compress, decompress } from "compress-json";
 
 // Init vars &  Controls
 
@@ -33,6 +34,13 @@ const BOX_SIZE = PLANE_SIZE / (COLS - 1);
 let AMP = BOX_SIZE * 3;
 const MIN_BOX_HEIGHT = 0.5;
 const STEP_SIZE = 0.001;
+
+const data = {
+  test: "testsdfdsv sfd dfs s",
+};
+
+const compressed = compress(data);
+console.log(compressed);
 
 // General Controls
 const amp = new RangeControl("AMP", "general-controls", {
@@ -196,6 +204,12 @@ renderer.setSize(canvasParent.offsetWidth, canvasParent.offsetHeight);
 
 canvasParent.appendChild(renderer.domElement);
 
+const updateCanvasSize = () => {
+  renderer.setSize(canvasParent.offsetWidth, canvasParent.offsetHeight);
+  camera.aspect = canvasParent.offsetWidth / canvasParent.offsetHeight;
+  camera.updateProjectionMatrix();
+};
+
 // INIT the model
 const grid = createGrid({
   width: PLANE_SIZE,
@@ -344,6 +358,8 @@ const getGaussianMask = (value: number, peak: number) => {
 const getBase = () => {
   return 2;
 };
+
+window.addEventListener("resize", updateCanvasSize);
 
 var fps = 10;
 function draw() {

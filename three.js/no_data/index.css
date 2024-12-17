@@ -1,0 +1,27 @@
+body {
+  position: relative;
+  margin: 0;
+  background-color: white !important;
+}
+
+#controls {
+  padding: 1rem;
+}
+
+#canvas-parent {
+  width: 100%;
+  background-color: grey;
+  aspect-ratio: 16 / 9;
+}
+
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+
+  @media screen and (min-width: 768px) {
+    flex-direction: row;
+  }
+}
