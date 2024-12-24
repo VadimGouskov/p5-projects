@@ -165,10 +165,31 @@ const gaussianWidth = new RangeControl("Width", "gaussian-controls", {
   value: 0.5,
 });
 
+const gaussianHeight = new RangeControl("Height", "gaussian-controls", {
+  min: 0,
+  max: 2,
+  step: 0.01,
+  value: 0.5,
+});
+
 const gaussianPeak = new RangeControl("Peak", "gaussian-controls", {
   min: 0,
   max: 2,
   step: 0.01,
+  value: 0.5,
+});
+
+const gaussianOffsetX = new RangeControl("Offset X", "gaussian-controls", {
+  min: 0,
+  max: 2,
+  step: 0.5,
+  value: 0.5,
+});
+
+const gaussianOffsetY = new RangeControl("Offset Y", "gaussian-controls", {
+  min: 0,
+  max: 2,
+  step: 0.5,
   value: 0.5,
 });
 
@@ -368,10 +389,10 @@ function draw() {
 
     const gaussianFunction = makeGaussian(
       gaussianPeak.value,
-      0.5,
-      0.5,
+      gaussianOffsetX.value,
+      gaussianOffsetY.value,
       gaussianWidth.value,
-      gaussianWidth.value
+      gaussianHeight.value
     );
 
     grid.every((point, row, col) => {

@@ -15,8 +15,8 @@ const createRangeInput = ({
   range.type = "range";
   range.min = min.toString();
   range.max = max.toString();
-  range.value = value.toString();
   range.step = step.toString();
+  range.value = value.toString();
 
   range.style.marginRight = "16px";
   range.style.width = "400px";
@@ -42,8 +42,8 @@ const createInput = ({
   input.type = "number";
   input.min = min.toString();
   input.max = max.toString();
-  input.value = value.toString();
   input.step = step.toString();
+  input.value = value.toString();
   input.style.width = "75px";
 
   return input;
