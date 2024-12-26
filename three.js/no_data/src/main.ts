@@ -5,7 +5,6 @@ import { createGrid } from "pretty-grid";
 import { RangeControl } from "./controls";
 
 import { createNoise2D } from "simplex-noise";
-import { compress, decompress } from "compress-json";
 
 // Init vars &  Controls
 
@@ -34,13 +33,6 @@ const BOX_SIZE = PLANE_SIZE / (COLS - 1);
 let AMP = BOX_SIZE * 3;
 const MIN_BOX_HEIGHT = 0.5;
 const STEP_SIZE = 0.001;
-
-const data = {
-  test: "testsdfdsv sfd dfs s",
-};
-
-const compressed = compress(data);
-console.log(compressed);
 
 // General Controls
 const amp = new RangeControl("AMP", "general-controls", {
@@ -343,7 +335,7 @@ scene.add(ambientLight);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 //controls.update() must be called after any manual changes to the camera's transform
-camera.position.set(0, 10, 10);
+camera.position.set(0, 10, 20);
 controls.update();
 
 // LOOP
@@ -424,6 +416,9 @@ function draw() {
       cube.geometry = geometry;
       cube.position.set(point.x, y / 2, point.y);
     });
+
+    boxGroup.position.x = -PLANE_SIZE / 2;
+    boxGroup.position.z = -PLANE_SIZE / 2;
 
     updateParametersFromControls();
 
