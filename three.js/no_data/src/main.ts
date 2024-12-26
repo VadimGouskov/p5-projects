@@ -146,7 +146,7 @@ const patchNoiseCap = new RangeControl("Noise Cap", "patches-controls", {
   min: 0,
   max: 2,
   step: 0.01,
-  value: 0.5,
+  value: 1.5,
 });
 
 // gausian controls
@@ -154,21 +154,21 @@ const gaussianWidth = new RangeControl("Width", "gaussian-controls", {
   min: 0,
   max: 2,
   step: 0.01,
-  value: 0.5,
+  value: 0.14,
 });
 
 const gaussianHeight = new RangeControl("Height", "gaussian-controls", {
   min: 0,
   max: 2,
   step: 0.01,
-  value: 0.5,
+  value: 0.14,
 });
 
 const gaussianPeak = new RangeControl("Peak", "gaussian-controls", {
   min: 0,
   max: 2,
   step: 0.01,
-  value: 0.5,
+  value: 4,
 });
 
 const gaussianOffsetX = new RangeControl("Offset X", "gaussian-controls", {
