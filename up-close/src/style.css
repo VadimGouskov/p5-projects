@@ -1,0 +1,8 @@
+#slider-parent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  height: 100vh;
+  overflow: scroll;
+}
